@@ -1,35 +1,31 @@
 {
-    "name":  "stemaide-web-studio",
-    "private":  true,
-    "version":  "0.1.0",
-    "description":  "STEMAIDE Web Studio Ã¢â‚¬â€ modern educational platform for Arduino-based coding and hardware projects.",
-    "type":  "module",
-    "workspaces":  [
-                       "apps/*",
-                       "packages/*"
-                   ],
-    "scripts":  {
-                    "dev":  "next dev",
-                    "dev:full":  "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/dev-all.ps1",
-                    "dev:fast":  "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/dev-fast.ps1",
-                    "build":  "next build",
-                    "start":  "next start",
-                    "lint":  "next lint",
-                    "generate":  "prisma generate",
-                    "db:seed":  "node prisma/seed.js",
-                    "run:stable":  "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/stable-local.ps1"
-                },
-    "dependencies":  {
-                         "tslib":  "^2.4.0",
-                         "@prisma/client":  "^5.2.0",
-                         "sqlite3":  "^5.0.23",
-                         "express":  "^4.18.2",
-                         "bcryptjs":  "^2.4.3",
-                         "jsonwebtoken":  "^9.0.0"
-                     },
-    "devDependencies":  {
-                            "prisma":  "^5.0.0",
-                            "eslint":  "^8.41.0",
-                            "eslint-config-next":  "^13.2.0"
-                        }
+    "name": "stemaide-web-studio",
+    "private": true,
+    "version": "0.1.0",
+    "description": "STEMAIDE Web Studio Ã¢â‚¬â€ modern educational platform for Arduino-based coding and hardware projects.",
+    "type": "module",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "dev": "turbo run dev",
+        "build": "turbo run build",
+        "lint": "turbo run lint",
+        "generate": "turbo run generate"
+    },
+    "dependencies": {
+        "@prisma/client": "^5.2.0",
+        "bcryptjs": "^2.4.3",
+        "express": "^4.18.2",
+        "jsonwebtoken": "^9.0.0",
+        "sqlite3": "^5.0.23",
+        "tslib": "^2.4.0"
+    },
+    "devDependencies": {
+        "eslint": "^8.41.0",
+        "eslint-config-next": "^13.2.0",
+        "prisma": "^5.0.0",
+        "turbo": "^2.10.6"
+    }
 }

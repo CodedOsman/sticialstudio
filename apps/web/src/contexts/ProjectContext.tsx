@@ -1,24 +1,23 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { useAuth } from "./AuthContext";
 import { useBoard } from "./BoardContext";
 import { apiFetch, safeJson } from "@/lib/api";
 import { parseProjectMeta } from "@/lib/projects/projectMeta";
 import {
   buildProjectPayload,
   getStoredActiveProjectId,
-  mergeCircuitFileIntoProjectFiles,
+
   persistActiveProjectId,
   resolveProjectFilesState,
   type PersistedProjectRecord,
   UNTITLED_PROJECT_NAME,
 } from "@/lib/projects/projectPersistence";
 import { DEFAULT_ARDUINO_CODE, DEFAULT_MICROPYTHON_CODE } from "@/templates/codeTemplates";
-import { useCircuitStore } from "@/stores/circuitStore";
+
 import { useBlocklyStore } from "@/stores/blocklyStore";
 import { useEditorStore, type FileItem } from "@/stores/editorStore";
-import { useSimulationStore } from "@/stores/simulationStore";
+
 
 export type { FileItem } from "@/stores/editorStore";
 
@@ -61,7 +60,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const [hasLoadedProjectFiles, setHasLoadedProjectFiles] = useState(() => !getStoredActiveProjectId());
   const filesRef = useRef<FileItem[]>(useEditorStore.getState().files);
   const activeFileIdRef = useRef<string | null>(useEditorStore.getState().activeFileId);
-  const { token } = useAuth();
+  const token = 'local';
   const {
     currentBoard,
     codingMode,
@@ -107,16 +106,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   );
 
   const buildCurrentProjectFiles = useCallback(
-    () =>
-      mergeCircuitFileIntoProjectFiles({
-        files: filesRef.current,
-        environment,
-        circuitData: {
-          components: useCircuitStore.getState().components,
-          nets: useCircuitStore.getState().nets,
-        },
-      }),
-    [environment],
+    () => filesRef.current,
+    [],
   );
 
   const buildCurrentProjectPayload = useCallback(
@@ -165,8 +156,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     useEditorStore.getState().resetEditorState();
     useEditorStore.getState().initializeWorkspaceFiles(sourceFileName, resolvedLanguage, starterSourceCode);
     useBlocklyStore.getState().resetBlocklyState();
-    useSimulationStore.getState().resetSimulationStore();
-    useCircuitStore.getState().clearCircuit();
+
+
   }, [clearPendingProjectIntent, codingMode, generator, language]);
 
   const refreshProjectFiles = useCallback(async () => {

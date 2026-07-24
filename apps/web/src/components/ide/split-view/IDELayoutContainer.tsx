@@ -10,12 +10,7 @@ import { useStudioPreferences } from '@/contexts/StudioPreferencesContext';
 import { useProject } from '@/contexts/ProjectContext';
 import { useEditorStore } from '@/stores/editorStore';
 import { useBlocklyStore } from '@/stores/blocklyStore';
-import { useCircuitStore } from '@/stores/circuitStore';
-import { useSimulationStore } from '@/stores/simulationStore';
-import { CIRCUIT_FILE_NAME, deserializeCircuit } from '@/lib/circuit/circuitSerializer';
 import TopToolbar from '../TopToolbar';
-import CircuitLabTopBar from '../circuit-lab/TopBar';
-import CanvasWorkspace from '../circuit-lab/CanvasWorkspace';
 import CodingEnvironmentTopBar from '../coding-environment/TopBar';
 import BlocklyWorkspace from '../BlocklyWorkspace';
 import TerminalPanel from '../TerminalPanel';
@@ -40,63 +35,30 @@ import NewSketchDialog from './NewSketchDialog';
 import { LEFT_PANEL_WIDTH, RIGHT_PANEL_WIDTH } from './constants';
 import { useSplitViewEventBus } from './SplitViewEventBus';
 import { useEditorOrchestrator } from './EditorOrchestrator';
-import { useCircuitOrchestrator } from './CircuitOrchestrator';
+
 import { useCompileController } from './CompileController';
 import { useAutoSaveManager } from './AutoSaveManager';
 import { useIDELayoutState } from './hooks/useIDELayoutState';
 
 const TextEditor = dynamic(() => import('../TextEditor'), { ssr: false });
-const SimulationCanvas = dynamic(() => import('../SimulationCanvas'), { ssr: false, loading: () => null });
+
 
 type WebSerialController = ReturnType<typeof useWebSerial>;
 
 function CodeGuidanceCard({
-  environment,
-  virtualComponentCount,
   isBlockMode,
-  router,
-  onBackToCircuit,
 }: {
-  environment: string;
-  virtualComponentCount: number;
   isBlockMode: boolean;
-  router: ReturnType<typeof useRouter>;
-  onBackToCircuit: () => void;
 }) {
   return (
     <WorkspaceGuidance
       eyebrow="Next Step"
-      title={
-        environment === 'virtual' && virtualComponentCount === 0
-          ? 'Build the circuit first, then add code'
-          : isBlockMode
-            ? 'Add your first blocks'
-            : 'Write your first code'
-      }
-      description={
-        environment === 'virtual' && virtualComponentCount === 0
-          ? 'Add a board and a few parts in Circuit Lab first. Then come back here to write code, simulate, and save the project.'
-          : isBlockMode
-            ? 'Choose a block category on the left, drag logic into the workspace, and use the generated code panel to follow what is happening.'
-            : 'Start with setup and loop for Arduino C++, or write your MicroPython script before you run or upload it.'
-      }
-      chips={
-        environment === 'virtual' && virtualComponentCount === 0
-          ? ['1. Add parts', '2. Add code', '3. Simulate']
-          : isBlockMode
-            ? ['Open blocks', 'Generate code', 'Save when ready']
-            : ['Write code', 'Save project', 'Run when ready']
-      }
-      icon={environment === 'virtual' && virtualComponentCount === 0 ? <CircuitBoard size={18} /> : <Code2 size={18} />}
+      title={isBlockMode ? 'Add your first blocks' : 'Write your first code'}
+      description={isBlockMode ? 'Choose a block category on the left, drag logic into the workspace, and use the generated code panel to follow what is happening.' : 'Start with setup and loop for Arduino C++, or write your MicroPython script before you run or upload it.'}
+      chips={isBlockMode ? ['Open blocks', 'Generate code', 'Save when ready'] : ['Write code', 'Save project', 'Run when ready']}
+      icon={<Code2 size={18} />}
       compact
-      actions={
-        environment === 'virtual' && virtualComponentCount === 0
-          ? [
-              { label: 'Back to Circuit', onClick: onBackToCircuit },
-              { label: 'Try a Course', onClick: () => router.push('/courses'), tone: 'secondary' },
-            ]
-          : []
-      }
+      actions={[]}
     />
   );
 }
@@ -124,7 +86,6 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
   const { projectName, setProjectName, projectId, refreshProjectFiles, saveProject, startNewSketch } = useProject();
   const hasUnsavedChanges = useEditorStore((state) => state.hasUnsavedChanges);
   const editor = useEditorOrchestrator();
-  const circuit = useCircuitOrchestrator();
   const compile = useCompileController();
   const autoSaveManager = useAutoSaveManager();
 
@@ -135,9 +96,7 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
     editorFontSize,
   });
 
-  const shouldShowCodeGuidance = !editor.isBlockMode && (
-    editor.environment === 'virtual' ? circuit.virtualComponentCount === 0 : editor.sourceCode.trim().length === 0
-  );
+  const shouldShowCodeGuidance = !editor.isBlockMode && editor.sourceCode.trim().length === 0;
 
 
   const rightViews = useMemo<IdeRightContextView[]>(() => {
@@ -268,23 +227,7 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
     }
   }, [projectId, refreshProjectFiles]);
 
-  const handleResetCircuitZone = React.useCallback(() => {
-    useSimulationStore.getState().resetSimulationStore();
 
-    if (projectId) {
-      const circuitFile = useEditorStore.getState().files.find((file) => file.name === CIRCUIT_FILE_NAME);
-      if (circuitFile?.content) {
-        try {
-          useCircuitStore.getState().setCircuitData(deserializeCircuit(circuitFile.content), true);
-          return;
-        } catch (error) {
-          console.error('[IDELayoutContainer] Failed to restore circuit from project data after a circuit boundary reset.', error);
-        }
-      }
-    }
-
-    useCircuitStore.getState().clearCircuit();
-  }, [projectId]);
 
   const handleResetTerminalZone = React.useCallback(() => {
     webSerial.clearMessages();
@@ -456,13 +399,7 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
   ) : (
     <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
       {shouldShowCodeGuidance ? (
-        <CodeGuidanceCard
-          environment={editor.environment}
-          virtualComponentCount={circuit.virtualComponentCount}
-          isBlockMode={editor.isBlockMode}
-          router={router}
-          onBackToCircuit={() => layout.setStudioView('circuit')}
-        />
+        <CodeGuidanceCard isBlockMode={editor.isBlockMode} />
       ) : null}
       <div className="min-h-0 flex-1">
         <div className="h-full min-h-0 min-w-0">{textCenterStage}</div>
@@ -470,130 +407,7 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
     </div>
   );
 
-  const virtualProjectRail = (
-    <VirtualProjectRail
-      activeView={layout.activeView === 'circuit' ? 'circuit' : 'code'}
-      codingMode={editor.codingMode}
-      componentCount={circuit.virtualComponentCount}
-      netCount={circuit.virtualNetCount}
-      mappedPinCount={circuit.virtualMappedPinCount}
-      hasCode={editor.hasRunnableSimulationCode}
-      supportsSimulation={compile.supportsSimulation && Boolean(circuit.simulationControls)}
-      isSimulationActive={circuit.isSimulationActive}
-      isSimulationBusy={Boolean(circuit.simulationStatus?.isCompiling)}
-      onOpenCode={() => layout.setStudioView('code')}
-      onBackToCircuit={() => layout.setStudioView('circuit')}
-    />
-  );
 
-  const hiddenCircuitSimulation = compile.supportsSimulation ? (
-    <div className="hidden" aria-hidden="true">
-      {circuit.hasVisitedCodingEnvironment || layout.activeView === 'code' ? (
-        <SimulationCanvas
-          sourceCode={editor.sourceCode}
-          boardName={editor.currentBoard}
-          showHeader={false}
-          showInternalControls={false}
-          onRegisterControls={circuit.setSimulationControls}
-          onStatusChange={circuit.setSimulationStatus}
-          showBoard={false}
-        />
-      ) : null}
-    </div>
-  ) : null;
-
-  if (editor.environment === 'virtual') {
-    return (
-      <div className="circuit-lab-shell flex h-[100dvh] w-full flex-col overflow-hidden px-3 py-3">
-        {layout.activeView === 'circuit' ? (
-          <>
-            <CircuitLabTopBar
-              projectName={projectName}
-              boardName={editor.currentBoard}
-              codingMode={editor.codingMode}
-              hasUnsavedChanges={hasUnsavedChanges}
-              isSaving={autoSaveManager.isSaving}
-              isConnected={webSerial.isConnected}
-              onProjectNameChange={handleProjectNameChange}
-              onUpload={() => eventBus.emit('compile:upload-request', undefined)}
-              onConnectDevice={() => eventBus.emit('device:connect-toggle-request', undefined)}
-              onSaveProject={() => eventBus.emit('project:save-request', { origin: 'manual' })}
-              onOpenProject={() => router.push('/dashboard')}
-              onNewSketch={handleRequestNewSketch}
-              onOpenPreferences={openPreferences}
-              onOpenCodingEnvironment={() => layout.setStudioView('code')}
-              saveStatusText={autoSaveManager.visibleSaveStatusText}
-              saveStatusTone={autoSaveManager.visibleSaveStatusTone}
-            />
-            {virtualProjectRail}
-            <div className="mt-3 min-h-0 flex-1">
-              <div className="relative h-full min-h-0 overflow-hidden">
-                <IDEErrorBoundary
-                  zone="Circuit Lab"
-                  title="Circuit Lab hit a problem"
-                  description="The circuit canvas crashed. Reload this canvas or restore its state without closing the rest of the IDE."
-                  onResetState={handleResetCircuitZone}
-                >
-                  <CanvasWorkspace />
-                </IDEErrorBoundary>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <CodingEnvironmentTopBar
-              projectName={projectName}
-              boardName={editor.currentBoard}
-              codingMode={editor.codingMode}
-              isSimulationActive={circuit.isSimulationActive}
-              isSimulationBusy={Boolean(circuit.simulationStatus?.isCompiling)}
-              supportsSimulation={compile.supportsSimulation && Boolean(circuit.simulationControls)}
-              canUploadAndSimulate={editor.hasRunnableSimulationCode}
-              canResetSimulation={Boolean(circuit.simulationControls)}
-              componentCount={circuit.virtualComponentCount}
-              mappedPinCount={circuit.virtualMappedPinCount}
-              hasUnsavedChanges={hasUnsavedChanges}
-              isSaving={autoSaveManager.isSaving}
-              isCompiling={compile.isCompiling}
-              onBackToCircuitLab={() => layout.setStudioView('circuit')}
-              onChangeCodingMode={(mode) => eventBus.emit('editor:coding-mode-request', { mode })}
-              onUploadAndSimulate={() => eventBus.emit('simulation:toggle-request', undefined)}
-              onStopSimulation={() => circuit.simulationControls?.stop()}
-              onResetSimulation={() => circuit.simulationControls?.reset()}
-              onSaveProject={() => eventBus.emit('project:save-request', { origin: 'manual' })}
-              onNewSketch={handleRequestNewSketch}
-              onOpenPreferences={openPreferences}
-              onVerify={() => eventBus.emit('compile:verify-request', undefined)}
-              onUpload={() => eventBus.emit('compile:upload-request', undefined)}
-              saveStatusText={autoSaveManager.visibleSaveStatusText}
-              saveStatusTone={autoSaveManager.visibleSaveStatusTone}
-            />
-            {virtualCodingStage}
-          </>
-        )}
-
-        {hiddenCircuitSimulation}
-        {preferencesDialog}
-        <SaveProjectModal
-          open={autoSaveManager.isSaveModalOpen}
-          isSaving={autoSaveManager.isSaving}
-          newProjectName={autoSaveManager.newProjectName}
-          currentBoard={editor.currentBoard}
-          runtimeLabel={runtimeLabel}
-          onNameChange={autoSaveManager.setNewProjectName}
-          onClose={handleCloseSaveProjectModal}
-          onSubmit={() => void autoSaveManager.submitSaveModal()}
-        />
-        <NewSketchDialog
-          open={isNewSketchDialogOpen}
-          isSavingFirst={isSavingBeforeNewSketch}
-          onCancel={handleCancelNewSketch}
-          onDiscard={handleDiscardNewSketch}
-          onSaveFirst={() => void handleSaveThenNewSketch()}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#0b0e14]">
@@ -610,9 +424,6 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
         rightCollapsed={layout.rightCollapsed}
         bottomCollapsed={layout.bottomCollapsed}
         showPanelControls={!editor.isBlockMode}
-        showStudioToggle={editor.isBlockMode}
-        activeStudioView={layout.activeView}
-        onChangeStudioView={layout.setStudioView}
         onVerify={() => eventBus.emit('compile:verify-request', undefined)}
         onUpload={() => eventBus.emit('compile:upload-request', undefined)}
         onConnectDevice={() => eventBus.emit('device:connect-toggle-request', undefined)}
@@ -646,13 +457,7 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
           <div className="relative flex min-h-0 flex-1 flex-col px-2">
             {shouldShowCodeGuidance ? (
               <div className="absolute left-1/2 top-4 z-40 w-full max-w-xl -translate-x-1/2 shadow-2xl">
-                <CodeGuidanceCard
-                  environment={editor.environment}
-                  virtualComponentCount={circuit.virtualComponentCount}
-                  isBlockMode={editor.isBlockMode}
-                  router={router}
-                  onBackToCircuit={() => layout.setStudioView('circuit')}
-                />
+                <CodeGuidanceCard isBlockMode={editor.isBlockMode} />
               </div>
             ) : null}
 

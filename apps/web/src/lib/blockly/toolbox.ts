@@ -2,13 +2,12 @@ import * as Blockly from 'blockly';
 import { isBlockSupportedForBoard } from '@/lib/blockly/blockSupport';
 import { BoardKey } from '@/contexts/BoardContext';
 import { isOptionalCircuitBlock, type CodingCircuitSnapshot } from '@/lib/blockly/circuitAwareness';
-import { type CircuitData } from '@/contexts/CircuitContext';
 import { defineCustomBlocks } from '@/lib/blockly/blocks';
 import { buildToolboxXmlFromRegistry, type RegistryToolboxOptions } from '@/lib/blockly/registry';
 import { getGuidedToolboxGroups, type ToolboxLearningLevel } from '@/lib/blockly/guidedToolbox';
 
 export type CircuitAwareWindow = Window & typeof globalThis & {
-  __CIRCUIT_DATA?: CircuitData;
+  __CIRCUIT_DATA?: any;
   __CIRCUIT_CODING_SNAPSHOT?: CodingCircuitSnapshot;
 };
 
@@ -33,7 +32,7 @@ export interface GuidedToolboxCategorySummary {
   sourceCategoryNames: string[];
 }
 
-export const getToolboxForBoard = (board: BoardKey, circuitData?: CircuitData, codingSnapshot?: CodingCircuitSnapshot, options: ToolboxBuildOptions = {}) => {
+export const getToolboxForBoard = (board: BoardKey, circuitData?: any, codingSnapshot?: CodingCircuitSnapshot, options: ToolboxBuildOptions = {}) => {
   defineCustomBlocks();
   const defaultToolbox = buildToolboxXmlFromRegistry(options);
   // Parse and filter the toolbox XML
@@ -73,7 +72,7 @@ export const getToolboxForBoard = (board: BoardKey, circuitData?: CircuitData, c
     (snapshot?.components || [])
       .filter((component) => component.isCodeReady)
       .forEach((component) => {
-        component.availableBlocks.forEach((blockType) => {
+        component.availableBlocks.forEach((blockType: string) => {
           if (addedTypes.has(blockType) || !Blockly.Blocks[blockType] || !isBlockSupportedForBoard(blockType, board)) {
             return;
           }
@@ -262,7 +261,7 @@ export function hasToolboxItemsApi(toolbox: Blockly.IToolbox): toolbox is Toolbo
   return typeof (toolbox as ToolboxWithItems).getToolboxItems === 'function';
 }
 
-export function buildCategoryToolboxXml(board: BoardKey, requestedName: string, circuitData?: CircuitData, codingSnapshot?: CodingCircuitSnapshot, options: ToolboxBuildOptions = {}) {
+export function buildCategoryToolboxXml(board: BoardKey, requestedName: string, circuitData?: any, codingSnapshot?: CodingCircuitSnapshot, options: ToolboxBuildOptions = {}) {
   if (typeof DOMParser === 'undefined' || typeof XMLSerializer === 'undefined') {
     return EMPTY_TOOLBOX_XML;
   }
@@ -398,7 +397,7 @@ export function hideNativeToolboxUi(workspace: Blockly.WorkspaceSvg) {
 
 
 
-export function getVisibleToolboxCategories(board: BoardKey, circuitData?: CircuitData, codingSnapshot?: CodingCircuitSnapshot, options: ToolboxBuildOptions = {}) {
+export function getVisibleToolboxCategories(board: BoardKey, circuitData?: any, codingSnapshot?: CodingCircuitSnapshot, options: ToolboxBuildOptions = {}) {
   if (typeof DOMParser === 'undefined') {
     return [] as ToolboxCategorySummary[];
   }
@@ -452,7 +451,7 @@ function buildMergedCategoryXml(categoryNodes: Element[]) {
 export function buildGuidedCategoryToolboxXml(
   board: BoardKey,
   requestedId: string,
-  circuitData?: CircuitData,
+  circuitData?: any,
   codingSnapshot?: CodingCircuitSnapshot,
   options: ToolboxBuildOptions = {},
 ) {
@@ -480,7 +479,7 @@ export function buildGuidedCategoryToolboxXml(
 
 export function getGuidedToolboxCategories(
   board: BoardKey,
-  circuitData?: CircuitData,
+  circuitData?: any,
   codingSnapshot?: CodingCircuitSnapshot,
   options: ToolboxBuildOptions = {},
 ) {

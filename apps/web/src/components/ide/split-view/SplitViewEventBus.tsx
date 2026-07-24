@@ -1,6 +1,5 @@
-﻿import React, { createContext, useContext, useState, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, type ReactNode } from 'react';
 import type { BlockTerminalTab } from '../BlockTerminalShell';
-import type { StudioView } from '../TopToolbar';
 import type { CodingMode } from '@/contexts/BoardContext';
 
 type EventPayloads = {
@@ -8,17 +7,14 @@ type EventPayloads = {
   'compile:verify-request': undefined;
   'compile:upload-request': undefined;
   'device:connect-toggle-request': undefined;
-  'simulation:toggle-request': undefined;
   'layout:block-terminal-request': { tab: BlockTerminalTab; open?: boolean };
-  'layout:studio-view-changed': { view: StudioView };
   'editor:runtime-sync-request': undefined;
   'editor:coding-mode-request': { mode: Exclude<CodingMode, null> };
   'app:reset-request': undefined;
   BLOCKLY_CHANGED: { xml: string };
   CODE_GENERATED: { code: string; warning: string | null };
-  CIRCUIT_UPDATED: { signature: string };
   FILE_SAVED: { origin: 'manual' | 'auto' | 'create'; projectId: string | null; projectName: string };
-  USER_EDITED: { source: 'text' | 'blockly' | 'file-tree' | 'circuit' | 'project-meta'; timestamp: number };
+  USER_EDITED: { source: 'text' | 'blockly' | 'file-tree' | 'project-meta'; timestamp: number };
 };
 
 type EventKey = keyof EventPayloads;
@@ -30,7 +26,7 @@ export interface SplitViewEventBus {
   on<K extends EventKey>(event: K, handler: EventHandler<K>): () => void;
 }
 
-const GUARDED_EVENTS = new Set<EventKey>(['BLOCKLY_CHANGED', 'CODE_GENERATED', 'CIRCUIT_UPDATED']);
+const GUARDED_EVENTS = new Set<EventKey>(['BLOCKLY_CHANGED', 'CODE_GENERATED']);
 
 function deepEqual(left: unknown, right: unknown) {
   if (Object.is(left, right)) {

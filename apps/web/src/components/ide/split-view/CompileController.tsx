@@ -1,10 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { API_BASE_URL, apiFetch, safeJson } from '@/lib/api';
 import { useEditorOrchestrator } from './EditorOrchestrator';
-import { useCircuitOrchestrator } from './CircuitOrchestrator';
 import { useSplitViewEventBus } from './SplitViewEventBus';
-import { extractCompileFeedback } from '@/lib/simulator/compileFeedback';
-import { useSimulationStore } from '@/stores/simulationStore';
 import { encodeUtf8AsHex } from './helpers';
 import type { useWebSerial } from '@/hooks/useWebSerial';
 
@@ -19,7 +16,7 @@ interface CompileResponse {
 interface CompileControllerValue {
   isCompiling: boolean;
   supportsDeviceFiles: boolean;
-  supportsSimulation: boolean;
+
   boardSupportNote?: string;
 }
 
@@ -42,15 +39,10 @@ export function useCompileFlow(webSerial: WebSerialController): CompileControlle
     arduinoProjectFiles,
     arduinoEntryFilePath,
   } = useEditorOrchestrator();
-  const { simulationControls, simulationStatus } = useCircuitOrchestrator();
-  const setCompileFeedback = useSimulationStore((state) => state.setCompileFeedback);
-  const clearCompileFeedback = useSimulationStore((state) => state.clearCompileFeedback);
   const [isCompiling, setIsCompiling] = useState(false);
-
-  const supportsSimulation = compileStrategy === 'arduino-cli' && Boolean(boardConfig?.supportsBrowserSimulation);
   const supportsDeviceFiles = boardConfig?.uploadTransport === 'micropython-raw-repl';
   const boardSupportNote = boardConfig?.supportNote;
-  const isSimulationActive = Boolean(simulationStatus && (simulationStatus.isRunning || simulationStatus.isReady));
+
   const arduinoCompileScopeLabel = arduinoProjectFiles.length > 1 ? `project (${arduinoProjectFiles.length} files)` : 'sketch';
 
   const reportUnsupportedBoardAction = useCallback(
@@ -80,7 +72,7 @@ export function useCompileFlow(webSerial: WebSerialController): CompileControlle
 
   const handleVerify = useCallback(async () => {
     openBlockTerminalTab('build');
-    clearCompileFeedback();
+    
     if (compileStrategy === 'unsupported') {
       reportUnsupportedBoardAction('Compilation');
       return;
@@ -92,37 +84,28 @@ export function useCompileFlow(webSerial: WebSerialController): CompileControlle
     }
 
     setIsCompiling(true);
-    clearCompileFeedback();
+    
     webSerial.addMessage('system', `Compiling ${arduinoCompileScopeLabel} for ${currentBoard}...`);
 
     try {
-      const res = await apiFetch('/api/compile/arduino', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildArduinoCompilePayload()),
+      const { invoke } = await import('@tauri-apps/api/core');
+      const payload = buildArduinoCompilePayload();
+      
+      const result = await invoke<string>('compile_sketch', { payload }).catch(err => {
+        throw new Error(err as string);
       });
-      const data = await safeJson<CompileResponse>(res);
 
-      if (res.ok && data?.success) {
-        clearCompileFeedback();
-        webSerial.addMessage('system', 'Compilation successful.');
-        const lines = (data.log || '').split('\n').filter((line) => line.trim().length > 0);
-        lines.forEach((line) => webSerial.addMessage('app', line));
-      } else {
-        const message = res.ok ? 'Compilation failed.' : `Compiler API error (status ${res.status}).`;
-        setCompileFeedback(extractCompileFeedback(data?.log || message, message));
-        webSerial.addMessage('error', message);
-        const lines = (data?.log || '').split('\n').filter((line) => line.trim().length > 0);
-        lines.forEach((line) => webSerial.addMessage('error', line));
-      }
+      
+      webSerial.addMessage('system', 'Compilation successful.');
+      const lines = result.split('\n').filter((line) => line.trim().length > 0);
+      lines.forEach((line) => webSerial.addMessage('app', line));
     } catch (error) {
-      const message = `Compiler API offline at ${API_BASE_URL}: ${(error as Error).message}`;
-      setCompileFeedback(extractCompileFeedback(message, message));
+      const message = `Compilation failed: ${(error as Error).message}`;
       webSerial.addMessage('error', message);
     } finally {
       setIsCompiling(false);
     }
-  }, [arduinoCompileScopeLabel, buildArduinoCompilePayload, clearCompileFeedback, compileStrategy, currentBoard, openBlockTerminalTab, reportUnsupportedBoardAction, setCompileFeedback, supportsDeviceFiles, webSerial]);
+  }, [arduinoCompileScopeLabel, buildArduinoCompilePayload, compileStrategy, currentBoard, openBlockTerminalTab, reportUnsupportedBoardAction, supportsDeviceFiles, webSerial]);
 
   const syncMicroPythonProjectToDevice = useCallback(async () => {
     if (micropythonProjectFiles.length === 0) {
@@ -150,7 +133,7 @@ export function useCompileFlow(webSerial: WebSerialController): CompileControlle
 
   const handleUploadToBoard = useCallback(async () => {
     openBlockTerminalTab('build');
-    clearCompileFeedback();
+    
     if (compileStrategy === 'unsupported' || boardConfig?.uploadTransport === 'unsupported') {
       reportUnsupportedBoardAction('Upload');
       return;
@@ -175,31 +158,23 @@ export function useCompileFlow(webSerial: WebSerialController): CompileControlle
     }
 
     setIsCompiling(true);
-    clearCompileFeedback();
+    
     webSerial.addMessage('system', `Compiling ${arduinoCompileScopeLabel} for ${currentBoard} before upload...`);
 
     try {
-      const res = await apiFetch('/api/compile/arduino', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildArduinoCompilePayload()),
+      const { invoke } = await import('@tauri-apps/api/core');
+      const payload = buildArduinoCompilePayload();
+      
+      const result = await invoke<string>('upload_sketch', { payload, port: '' }).catch(err => {
+        throw new Error(err as string);
       });
-      const data = await safeJson<CompileResponse>(res);
 
-      if (res.ok && data?.success && data?.hex) {
-        clearCompileFeedback();
-        webSerial.addMessage('system', 'Compilation successful. Starting upload...');
-        await webSerial.flashArduino(data.hex);
-      } else {
-        const message = res.ok ? 'Compilation failed. Upload aborted.' : `Compiler API error (status ${res.status}).`;
-        setCompileFeedback(extractCompileFeedback(data?.log || message, message));
-        webSerial.addMessage('error', message);
-        const lines = (data?.log || '').split('\n').filter((line) => line.trim().length > 0);
-        lines.forEach((line) => webSerial.addMessage('error', line));
-      }
+      
+      webSerial.addMessage('system', 'Upload successful.');
+      const lines = result.split('\n').filter((line) => line.trim().length > 0);
+      lines.forEach((line) => webSerial.addMessage('app', line));
     } catch (error) {
-      const message = `Compiler API offline at ${API_BASE_URL}: ${(error as Error).message}`;
-      setCompileFeedback(extractCompileFeedback(message, message));
+      const message = `Upload failed: ${(error as Error).message}`;
       webSerial.addMessage('error', message);
     } finally {
       setIsCompiling(false);
@@ -216,8 +191,6 @@ export function useCompileFlow(webSerial: WebSerialController): CompileControlle
     supportsDeviceFiles,
     syncMicroPythonProjectToDevice,
     webSerial,
-    clearCompileFeedback,
-    setCompileFeedback,
   ]);
 
   const handleConnectDevice = useCallback(() => {
@@ -229,44 +202,21 @@ export function useCompileFlow(webSerial: WebSerialController): CompileControlle
     }
   }, [openBlockTerminalTab, webSerial]);
 
-  const handleUploadAndSimulate = useCallback(async () => {
-    if (!supportsSimulation || !simulationControls) {
-      return;
-    }
 
-    if (isSimulationActive) {
-      simulationControls.stop();
-      return;
-    }
-
-    let latestSourceCode = sourceCode;
-    if (isBlockMode) {
-      latestSourceCode = syncBlocklySourceCode();
-      if (latestSourceCode !== sourceCode) {
-        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-      }
-    }
-
-    if (!latestSourceCode.trim()) {
-      return;
-    }
-
-    await simulationControls.start();
-  }, [isBlockMode, isSimulationActive, simulationControls, sourceCode, supportsSimulation, syncBlocklySourceCode]);
 
   useEffect(() => eventBus.on('compile:verify-request', () => { void handleVerify(); }), [eventBus, handleVerify]);
   useEffect(() => eventBus.on('compile:upload-request', () => { void handleUploadToBoard(); }), [eventBus, handleUploadToBoard]);
   useEffect(() => eventBus.on('device:connect-toggle-request', () => { handleConnectDevice(); }), [eventBus, handleConnectDevice]);
-  useEffect(() => eventBus.on('simulation:toggle-request', () => { void handleUploadAndSimulate(); }), [eventBus, handleUploadAndSimulate]);
+
 
   return useMemo(
     () => ({
       isCompiling,
       supportsDeviceFiles,
-      supportsSimulation,
+
       boardSupportNote,
     }),
-    [boardSupportNote, isCompiling, supportsDeviceFiles, supportsSimulation],
+    [boardSupportNote, isCompiling, supportsDeviceFiles],
   );
 }
 

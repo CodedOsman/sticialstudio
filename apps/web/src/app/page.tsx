@@ -1,23 +1,15 @@
-﻿"use client";
+"use client";
 
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Blocks, BookOpen, CircuitBoard, Code2, LogIn } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
-import { useAuth } from "@/contexts/AuthContext";
 import { useProject } from "@/contexts/ProjectContext";
 import { Button } from "@/components/ui/Button";
 import { staggerContainer, staggerItem } from "@/components/ui/motion";
 const platformPanels = [
-  {
-    id: "circuit-lab",
-    title: "Circuit Lab",
-    description: "Choose a coding mode first, then open the circuit workspace and build visually.",
-    image: "/home/circuit-lab-preview.png",
-    icon: <CircuitBoard size={18} />,
-    accent: "text-teal-300 border-teal-300/20 bg-teal-400/10",
-  },
+
   {
     id: "block-coding",
     title: "Block Coding",
@@ -37,11 +29,9 @@ const platformPanels = [
 ] as const;
 
 export default function WelcomePage() {
-  const { user } = useAuth();
   const { setProjectId } = useProject();
 
   const panelHref: Record<(typeof platformPanels)[number]["id"], string> = {
-    "circuit-lab": "/projects/select-mode?entry=circuit-lab",
     "block-coding": "/projects/select-board?entry=block-home&environment=physical",
     "text-coding": "/projects/select-board?entry=text-home&environment=physical",
   };
@@ -50,20 +40,7 @@ export default function WelcomePage() {
     <MainLayout>
       <OnboardingShell
         headerActions={
-          user ? (
-            <Link href="/dashboard"><Button variant="inverse">Open Workspace</Button></Link>
-          ) : (
-            <>
-              <Link
-                href="/login"
-                className="inline-flex min-h-11 items-center gap-2 rounded-[18px] px-3 text-sm font-semibold text-white/74 transition-colors hover:text-white"
-              >
-                <LogIn size={16} />
-                Sign in
-              </Link>
-              <Link href="/register"><Button className="bg-[linear-gradient(135deg,#66a7ff,#7b61ff)] text-white hover:opacity-90">Get Started</Button></Link>
-            </>
-          )
+          <Link href="/dashboard"><Button variant="inverse">Open Workspace</Button></Link>
         }
         contentClassName="pb-20 pt-8 lg:pt-12"
       >

@@ -1,48 +1,92 @@
+datasource db {
+  provider = "sqlite" 
+  url      = "file:./dev.db"
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
-}
-
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
+  id        String   @id @default(uuid())
+  email     String   @unique
   password  String
   name      String?
+  createdAt DateTime @default(now())
+  enrollments Enrollment[]
+  projects    UserProject[]
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  modules     Module[]
+  enrollments Enrollment[]
+}
+
+model Module {
+  id        String   @id @default(uuid())
+  title     String
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  lessons   Lesson[]
   projects  Project[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  quizzes   Quiz[]
+}
+
+model Lesson {
+  id       String @id @default(uuid())
+  title    String
+  content  String?
+  moduleId String
+  module   Module @relation(fields: [moduleId], references: [id])
 }
 
 model Project {
-  id          String   @id @default(uuid())
-  name        String
+  id          String  @id @default(uuid())
+  title       String
   description String?
-  board       String?
-  codingMode  String?
-  language    String?
-  generator   String?
-  environment String?
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  files       File[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  wiringDiagram String?
+  moduleId    String
+  module      Module   @relation(fields: [moduleId], references: [id])
+  userProjects UserProject[]
 }
 
-model File {
-  id        String   @id @default(uuid())
-  name      String
-  content   String
-  type      String
-  parentId  String?
-  parent    File?    @relation("FolderChildren", fields: [parentId], references: [id], onDelete: Cascade)
-  children  File[]   @relation("FolderChildren")
+model Quiz {
+  id       String        @id @default(uuid())
+  title    String
+  moduleId String
+  module   Module        @relation(fields: [moduleId], references: [id])
+  questions QuizQuestion[]
+}
+
+model QuizQuestion {
+  id     String @id @default(uuid())
+  quizId String
+  quiz   Quiz   @relation(fields: [quizId], references: [id])
+  prompt String
+  answer String
+}
+
+model Enrollment {
+  id        String  @id @default(uuid())
+  userId    String
+  courseId  String
+  user      User    @relation(fields: [userId], references: [id])
+  course    Course  @relation(fields: [courseId], references: [id])
+  progress  Float   @default(0.0)
+  enrolledAt DateTime @default(now())
+}
+
+model UserProject {
+  id        String @id @default(uuid())
+  userId    String
   projectId String
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  code      String?
+  blocklyXml String?
+  status    String  @default("saved")
   updatedAt DateTime @updatedAt
+  user      User    @relation(fields: [userId], references: [id])
+  project   Project @relation(fields: [projectId], references: [id])
 }

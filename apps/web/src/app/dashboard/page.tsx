@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import MainLayout from '@/components/layout/MainLayout';
-import { useAuth } from '@/contexts/AuthContext';
 import { useProject } from '@/contexts/ProjectContext';
 import { useBoard } from '@/contexts/BoardContext';
 import { apiFetch, API_BASE_URL, safeJson } from '@/lib/api';
@@ -146,7 +145,8 @@ function getProjectMode(meta: ProjectMeta | null) {
 }
 
 export default function DashboardPage() {
-  const { user, token } = useAuth();
+  const user = { name: 'Builder' };
+  const token = 'local';
   const router = useRouter();
   const { setProjectId } = useProject();
   const { setCodingMode, setLanguage, setCurrentBoard, setGenerator, setEnvironment } = useBoard();

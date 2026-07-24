@@ -2,11 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type 
 import { useBoard } from '@/contexts/BoardContext';
 import { useProject } from '@/contexts/ProjectContext';
 import { useEditorStore, type FileItem } from '@/stores/editorStore';
-import { useCircuitStore } from '@/stores/circuitStore';
+
 import { useStudioPreferences } from '@/contexts/StudioPreferencesContext';
 import { buildProjectMetaPayload } from '@/lib/projects/projectMeta';
-import { mergeCircuitFileIntoProjectFiles } from '@/lib/projects/projectPersistence';
-import { CIRCUIT_FILE_NAME, serializeCircuit } from '@/lib/circuit/circuitSerializer';
+
 import { useSplitViewEventBus } from '../SplitViewEventBus';
 import { useCompileController } from '../CompileController';
 import type { useWebSerial } from '@/hooks/useWebSerial';
@@ -59,16 +58,7 @@ function normalizeProjectName(projectName: string) {
 }
 
 function buildSavableFileSet(files: FileItem[], context: ProjectSnapshotContext) {
-  return sortFilesForSnapshot(
-    mergeCircuitFileIntoProjectFiles({
-      files,
-      environment: context.environment,
-      circuitData: {
-        components: useCircuitStore.getState().components,
-        nets: useCircuitStore.getState().nets,
-      },
-    }),
-  );
+  return sortFilesForSnapshot(files);
 }
 
 function buildProjectSnapshot(context: ProjectSnapshotContext) {
@@ -86,28 +76,7 @@ function buildProjectSnapshot(context: ProjectSnapshotContext) {
   });
 }
 
-function syncCircuitFileIntoStore(context: ProjectSnapshotContext) {
-  const shouldIncludeCircuit = context.environment === 'virtual';
-  const files = useEditorStore.getState().files;
-  const existingCircuitFile = files.find((file) => file.name === CIRCUIT_FILE_NAME);
 
-  if (!shouldIncludeCircuit && !existingCircuitFile) {
-    return;
-  }
-
-  const { components, nets } = useCircuitStore.getState();
-  const circuitContent = serializeCircuit({ components, nets });
-  const editorStore = useEditorStore.getState();
-
-  if (existingCircuitFile) {
-    if (existingCircuitFile.content !== circuitContent) {
-      editorStore.updateFileContent(existingCircuitFile.id, circuitContent);
-    }
-    return;
-  }
-
-  editorStore.createFile(CIRCUIT_FILE_NAME, 'json', null, circuitContent);
-}
 
 export function useAutoSave(webSerial: WebSerialController): AutoSaveManagerValue {
   const eventBus = useSplitViewEventBus();
@@ -200,7 +169,7 @@ export function useAutoSave(webSerial: WebSerialController): AutoSaveManagerValu
         return false;
       }
 
-      syncCircuitFileIntoStore(contextRef.current);
+
       const snapshot = snapshotOverride ?? buildProjectSnapshot(contextRef.current);
 
       if (origin === 'auto' && snapshot === lastSavedSnapshotRef.current) {
@@ -259,7 +228,7 @@ export function useAutoSave(webSerial: WebSerialController): AutoSaveManagerValu
       return;
     }
 
-    syncCircuitFileIntoStore(contextRef.current);
+
     const snapshot = buildProjectSnapshot(contextRef.current);
 
     if (snapshot === lastSavedSnapshotRef.current) {
@@ -298,7 +267,7 @@ export function useAutoSave(webSerial: WebSerialController): AutoSaveManagerValu
 
   const submitSaveModal = useCallback(async () => {
     clearSaveStatusTimeout();
-    syncCircuitFileIntoStore(contextRef.current);
+
 
     const trimmedProjectName = newProjectName.trim();
     try {

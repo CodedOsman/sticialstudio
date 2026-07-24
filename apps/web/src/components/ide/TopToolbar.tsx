@@ -25,9 +25,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { fadeInUp } from "@/components/ui/motion";
 import ThemeToggle from '@/components/layout/ThemeToggle';
-import WorkspaceStageRail from "./WorkspaceStageRail";
 
-export type StudioView = "code" | "circuit";
 
 type TopToolbarVariant = "default" | "arduino-text";
 
@@ -45,9 +43,7 @@ interface TopToolbarProps {
   bottomCollapsed: boolean;
   showLeftToggle?: boolean;
   showPanelControls?: boolean;
-  showStudioToggle?: boolean;
-  activeStudioView?: StudioView;
-  onChangeStudioView?: (view: StudioView) => void;
+
   onVerify: () => void;
   onUpload: () => void;
   onConnectDevice: () => void;
@@ -90,9 +86,7 @@ export default function TopToolbar({
   bottomCollapsed,
   showLeftToggle = true,
   showPanelControls = true,
-  showStudioToggle = false,
-  activeStudioView,
-  onChangeStudioView,
+
   onVerify,
   onUpload,
   onConnectDevice,
@@ -117,34 +111,7 @@ export default function TopToolbar({
         ? "border-rose-300 bg-rose-50 text-rose-600"
         : "border-[color:var(--ui-border-soft)] bg-[color:var(--ui-surface-elevated)] text-[var(--ui-color-text-muted)]";
 
-  const canSwitchStudios = Boolean(showStudioToggle && activeStudioView && onChangeStudioView && environment !== "physical");
   const isBlockWorkspace = codingMode === "block";
-
-  const stageItems = canSwitchStudios
-    ? [
-        {
-          label: "Build",
-          active: activeStudioView === "circuit",
-          icon: <Cpu size={14} />,
-          onClick: () => onChangeStudioView?.("circuit"),
-        },
-        {
-          label: "Code",
-          active: activeStudioView === "code",
-          icon: <Code2 size={14} />,
-          onClick: () => onChangeStudioView?.("code"),
-        },
-        {
-          label: isCompiling ? "Run busy" : "Run ready",
-          subtle: true,
-          icon: <Rocket size={14} />,
-        },
-      ]
-    : [
-        { label: "Build", icon: <Cpu size={14} /> },
-        { label: "Code", active: true, icon: <Code2 size={14} /> },
-        { label: isCompiling ? "Run busy" : "Run ready", subtle: true, icon: <Rocket size={14} /> },
-      ];
 
   if (variant === "arduino-text") {
     return (
@@ -418,7 +385,7 @@ export default function TopToolbar({
             ) : null}
           </div>
 
-          <WorkspaceStageRail items={stageItems} />
+
           {serialError ? (
             <div className="inline-flex items-center gap-2 rounded-[16px] border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-600">
               <AlertCircle size={14} />

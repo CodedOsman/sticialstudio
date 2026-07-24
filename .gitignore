@@ -9,6 +9,16 @@ build/
 *.tsbuildinfo
 *.sqlite
 
+# IDE files
+.idea/
+.codex/
+.opencode/
+.gemini/
+.antigravity/
+.cursor/
+.qoder/
+.vscode/
+
 # Environment secrets - never commit these
 .env
 .env.local

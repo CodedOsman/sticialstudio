@@ -20,7 +20,7 @@ if (-not $env:PORT) {
     $env:PORT = '4000'
 }
 
-$apiCommand = "cd /d `"$apiPath`"; `$env:JWT_SECRET='$($env:JWT_SECRET)'; `$env:PORT='$($env:PORT)'; npm run dev"
+$apiCommand = "cd `"$apiPath`"; `$env:JWT_SECRET='$($env:JWT_SECRET)'; `$env:PORT='$($env:PORT)'; npm run dev"
 
 Write-Host "Starting API in a new window..."
 Start-Process -FilePath 'powershell' -ArgumentList '-NoExit', '-Command', $apiCommand -WorkingDirectory $apiPath

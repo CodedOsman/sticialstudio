@@ -1,6 +1,13 @@
-﻿import { notFound } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { CourseTrackView } from '@/components/courses/CourseTrackView';
-import { getCourseTrack } from '@/lib/courses/catalog';
+import { getCourseTrack, getCourseCatalog } from '@/lib/courses/catalog';
+
+export async function generateStaticParams() {
+  const catalog = getCourseCatalog();
+  return catalog.map((track) => ({
+    track: track.slug,
+  }));
+}
 
 export default async function CourseTrackPage({ params }: { params: Promise<{ track: string }> }) {
   const { track } = await params;
@@ -12,4 +19,3 @@ export default async function CourseTrackPage({ params }: { params: Promise<{ tr
 
   return <CourseTrackView track={courseTrack} />;
 }
-

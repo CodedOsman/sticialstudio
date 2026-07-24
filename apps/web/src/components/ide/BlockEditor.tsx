@@ -48,12 +48,12 @@ import {
 
 
 
-import { useCircuitStore } from '@/stores/circuitStore';
+
 import { useBlocklyStore } from '@/stores/blocklyStore';
 
 
 
-import { getNetFromNodeId, getNetToNodeId } from '@/lib/circuit/netData';
+
 import { getOledInstances } from '@/lib/blockly/dropdowns';
 import { isBlockSupportedForBoard } from '@/lib/blockly/blockSupport';
 import { isOptionalCircuitBlock } from '@/lib/blockly/circuitAwareness';
@@ -271,10 +271,6 @@ export default function BlockEditor({
   const eventBus = useSplitViewEventBus();
   const { showAdvancedBlocks } = useStudioPreferences();
 
-  const circuitComponents = useCircuitStore((state) => state.components);
-  const circuitNets = useCircuitStore((state) => state.nets);
-  const codingSnapshot = useCircuitStore((state) => state.codingSnapshot);
-  const circuitData = useMemo(() => ({ components: circuitComponents, nets: circuitNets }), [circuitComponents, circuitNets]);
 
   const showCodePanel = useBlocklyStore((state) => state.showCodePanel);
   const setShowCodePanel = useBlocklyStore((state) => state.setShowCodePanel);
@@ -396,47 +392,7 @@ export default function BlockEditor({
 
 
 
-  const circuitRefreshSignature = useMemo(
-
-
-
-    () =>
-
-
-
-      JSON.stringify({
-
-
-
-        componentIds: circuitData.components.map((component) => `${component.id}:${component.type}`),
-
-
-
-        netEdges: circuitData.nets.map((net) => `${net.id}:${getNetFromNodeId(net)}->${getNetToNodeId(net)}`),
-
-
-
-        availableBlockTypes: codingSnapshot.availableBlockTypes,
-
-
-
-        usedSignalPins: codingSnapshot.usedSignalPins,
-
-
-
-        mappedComponentIds: codingSnapshot.mappedComponentIds,
-
-
-
-      }),
-
-
-
-    [circuitData.components, circuitData.nets, codingSnapshot.availableBlockTypes, codingSnapshot.usedSignalPins, codingSnapshot.mappedComponentIds]
-
-
-
-  );
+  const circuitRefreshSignature = "";
 
 
 
@@ -455,44 +411,6 @@ export default function BlockEditor({
   }, [currentBoard]);
 
 
-
-
-
-
-
-  useEffect(() => {
-
-
-
-    if (typeof window === 'undefined') {
-
-
-
-      return;
-
-
-
-    }
-
-
-
-
-
-
-
-    const awareWindow = window as CircuitAwareWindow;
-
-
-
-    awareWindow.__CIRCUIT_DATA = circuitData;
-
-
-
-    awareWindow.__CIRCUIT_CODING_SNAPSHOT = codingSnapshot;
-
-
-
-  }, [circuitData, codingSnapshot]);
 
 
 
@@ -834,7 +752,7 @@ const showCategoryFlyout = useCallback(
 
     const nextCategory = (categoryName || '').trim();
     const flyoutXmlText = nextCategory
-      ? buildGuidedCategoryToolboxXml(board, nextCategory, circuitData, codingSnapshot, {
+      ? buildGuidedCategoryToolboxXml(board, nextCategory, undefined, undefined, {
           learningLevel: toolboxLearningLevel,
           showAdvancedBlocks: showExtendedBlocks,
         })
@@ -850,7 +768,7 @@ const showCategoryFlyout = useCallback(
     stabilizeFlyoutViewport(flyout);
   },
 
-  [circuitData, codingSnapshot, showExtendedBlocks, stabilizeFlyoutViewport, toolboxLearningLevel]
+  [showExtendedBlocks, stabilizeFlyoutViewport, toolboxLearningLevel]
 );
 
 const hideCategoryFlyout = useCallback(() => {
@@ -1284,27 +1202,7 @@ const handleGenerate = useCallback((force = false) => {
     }
   }, [currentBoard, initializeWorkspace, serializeWorkspace, theme]);
 
-  useEffect(() => {
-    return eventBus.subscribe('CIRCUIT_UPDATED', ({ signature }) => {
-      if (!workspaceRef.current || signature === lastCircuitUpdateSignatureRef.current) {
-        return;
-      }
 
-      lastCircuitUpdateSignatureRef.current = signature;
-      hideNativeToolboxUi(workspaceRef.current);
-
-      if (isFlyoutVisibleRef.current) {
-        showCategoryFlyout(currentBoardRef.current, selectedCategoryNameRef.current);
-        syncFlyoutScale();
-      } else {
-        hideCategoryFlyout();
-      }
-
-      Blockly.svgResize(workspaceRef.current);
-      flushBlocklySync(true);
-      syncBlockCount();
-    });
-  }, [eventBus, flushBlocklySync, hideCategoryFlyout, showCategoryFlyout, syncBlockCount, syncFlyoutScale]);
 
 
 
@@ -1602,11 +1500,11 @@ const handleGenerate = useCallback((force = false) => {
 
   const guidedToolboxCategories = useMemo<GuidedToolboxCategorySummary[]>(
     () =>
-      getGuidedToolboxCategories(currentBoard, circuitData, codingSnapshot, {
+      getGuidedToolboxCategories(currentBoard, undefined, undefined, {
         learningLevel: toolboxLearningLevel,
         showAdvancedBlocks: showExtendedBlocks,
       }),
-    [currentBoard, circuitData, codingSnapshot, showExtendedBlocks, toolboxLearningLevel]
+    [currentBoard, showExtendedBlocks, toolboxLearningLevel]
   );
 
   const baseShelfCategories = useMemo(() => {
@@ -1677,8 +1575,8 @@ const handleGenerate = useCallback((force = false) => {
   }, [availableCategories, categoryQuery]);
 
   const availableBlockTypeSet = useMemo(
-    () => new Set(codingSnapshot.availableBlockTypes),
-    [codingSnapshot.availableBlockTypes]
+    () => new Set<string>([]),
+    []
   );
 
   const orphanedCircuitBlockTypes = useMemo(
@@ -1687,8 +1585,8 @@ const handleGenerate = useCallback((force = false) => {
   );
 
   const hasDisplayStarterBlocks = useMemo(
-    () => codingSnapshot.availableBlockTypes.some((blockType) => DISPLAY_BLOCK_TYPES.has(blockType)),
-    [codingSnapshot.availableBlockTypes]
+    () => [].some((blockType: any) => DISPLAY_BLOCK_TYPES.has(blockType)),
+    []
   );
 
   const hasTimingBlock = useMemo(
@@ -1702,7 +1600,7 @@ const handleGenerate = useCallback((force = false) => {
   );
 
   const learningGuide = useMemo(() => {
-    if (!codingSnapshot.components.some((component) => component.isCodeReady)) {
+    if (![].some((component: any) => component.isCodeReady)) {
       return {
         tone: 'progress' as const,
         title: 'Start with output',
@@ -1801,8 +1699,8 @@ const handleGenerate = useCallback((force = false) => {
   }, [
     availableBlockTypeSet,
     blockCount,
-    codingSnapshot.availableBlockTypes,
-    codingSnapshot.components,
+    [],
+    [],
     hasRootFlowBlock,
     hasTimingBlock,
     orphanedCircuitBlockTypes.length,

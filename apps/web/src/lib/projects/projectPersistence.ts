@@ -1,5 +1,4 @@
-import type { CircuitData } from "@/contexts/CircuitContext";
-import { CIRCUIT_FILE_NAME, serializeCircuit } from "@/lib/circuit/circuitSerializer";
+
 import { buildProjectMetaPayload, type ProjectMeta } from "@/lib/projects/projectMeta";
 import type { FileItem } from "@/stores/editorStore";
 
@@ -28,11 +27,7 @@ interface ProjectFileResolutionInput {
   generator: string | null;
 }
 
-interface MergeCircuitFileInput {
-  files: FileItem[];
-  environment: string | null | undefined;
-  circuitData: CircuitData;
-}
+
 
 export interface ProjectFileResolutionResult {
   projectName: string;
@@ -131,45 +126,7 @@ export function persistActiveProjectId(projectId: string | null) {
   }
 }
 
-export function mergeCircuitFileIntoProjectFiles({ files, environment, circuitData }: MergeCircuitFileInput) {
-  const shouldIncludeCircuit = environment === "virtual" || files.some((file) => file.name === CIRCUIT_FILE_NAME);
-  if (!shouldIncludeCircuit) {
-    return files;
-  }
 
-  const circuitContent = serializeCircuit(circuitData);
-  const existingCircuitFile = files.find((file) => file.name === CIRCUIT_FILE_NAME);
-
-  if (existingCircuitFile) {
-    if (existingCircuitFile.content === circuitContent) {
-      return files;
-    }
-
-    return files.map((file) =>
-      file.id === existingCircuitFile.id
-        ? {
-            ...file,
-            content: circuitContent,
-          }
-        : file,
-    );
-  }
-
-  if (environment !== "virtual") {
-    return files;
-  }
-
-  return [
-    ...files,
-    {
-      id: "__project-circuit__",
-      name: CIRCUIT_FILE_NAME,
-      type: "json",
-      parentId: null,
-      content: circuitContent,
-    },
-  ];
-}
 
 export function buildProjectPayload({ projectName, files, meta }: ProjectPayloadInput) {
   return {

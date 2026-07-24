@@ -5,7 +5,6 @@ import { Search, Library, Download, CheckCircle2, Info, AlertCircle, Loader2, Re
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { useBoard } from '@/contexts/BoardContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { apiFetch, safeJson } from '@/lib/api';
 
 interface LibraryItem {
@@ -70,7 +69,7 @@ function summarizeIncludes(library: LibraryItem) {
 
 export default function LibraryHub() {
   const { language } = useBoard();
-  const { token } = useAuth();
+  const token = 'local';
   const isPython = language === 'python';
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);

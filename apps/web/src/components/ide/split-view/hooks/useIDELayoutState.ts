@@ -1,5 +1,5 @@
-﻿import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
-import type { StudioView } from '../../TopToolbar';
+import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+export type StudioView = 'code' | 'circuit' | 'split';
 import type { BlockTerminalTab } from '../../BlockTerminalShell';
 import {
   BLOCK_TERMINAL_COLLAPSED_STORAGE_KEY,
@@ -62,7 +62,7 @@ export function useIDELayoutState({ environment, isBlockMode, supportsDeviceFile
         eventBus.emit('editor:runtime-sync-request', undefined);
       }
       setActiveView(view);
-      eventBus.emit('layout:studio-view-changed', { view });
+
     },
     [activeView, eventBus],
   );
@@ -79,7 +79,7 @@ export function useIDELayoutState({ environment, isBlockMode, supportsDeviceFile
     if (nextView === 'code') {
       eventBus.emit('editor:runtime-sync-request', undefined);
     }
-    eventBus.emit('layout:studio-view-changed', { view: nextView });
+
   }, [environment, eventBus]);
 
   useEffect(() => {

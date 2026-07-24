@@ -1,9 +1,8 @@
-﻿"use client";
+"use client";
 
 import React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { LayoutDashboard, LogOut, Maximize, Cpu } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useBoard } from '@/contexts/BoardContext';
 import { useProject } from '@/contexts/ProjectContext';
 import ThemeToggle from './ThemeToggle';
@@ -14,7 +13,6 @@ export default function Navbar() {
     const isDashboard = pathname === '/dashboard';
     const isIdeRoute = pathname === '/projects/ide' || pathname.startsWith('/projects/ide/');
 
-    const { user, logout } = useAuth();
     const { codingMode, currentBoard, setIsFullScreen } = useBoard();
     const { projectId } = useProject();
 
@@ -84,21 +82,7 @@ export default function Navbar() {
                     </button>
                 ) : null}
 
-                <button
-                    type="button"
-                    onClick={logout}
-                    className="rounded-lg border border-panel-border bg-panel p-2 text-muted transition-colors hover:border-rose-400/60 hover:text-rose-500"
-                    title="Sign Out"
-                >
-                    <LogOut size={14} />
-                </button>
 
-                <div
-                    className="ml-1 flex h-8 w-8 items-center justify-center rounded-full border border-panel-border bg-panel text-xs font-semibold text-foreground"
-                    title={user?.email || 'User'}
-                >
-                    {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
-                </div>
             </div>
         </header>
     );

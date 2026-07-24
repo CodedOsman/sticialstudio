@@ -16,8 +16,8 @@ import { Plus, Minus } from 'lucide-react';
 import { registerArduinoCompletions } from './monacoConfigs';
 import { ensureMonacoBootstrap } from '@/lib/monaco/bootstrap';
 import { normalizedRuntimeErrorToError } from '@/lib/runtime/normalizeRuntimeError';
-import { extractCompileFeedback } from '@/lib/simulator/compileFeedback';
-import { useSimulationStore } from '@/stores/simulationStore';
+
+
 
 const THEMES: Record<string, editor.IStandaloneThemeData> = {
   'sticial-light': {
@@ -298,8 +298,8 @@ export default function TextEditor({
   const monacoRef = useRef<typeof import('monaco-editor') | null>(null);
   const compileDecorationsRef = useRef<editor.IEditorDecorationsCollection | null>(null);
   const lastRevealedCompileLineRef = useRef<number | null>(null);
-  const compileFeedback = useSimulationStore((state) => state.compileFeedback);
-  const errorText = useSimulationStore((state) => state.simulationStatus?.errorText);
+  const compileFeedback = null;
+  const errorText = null;
   const {
     editorFontSize: fontSize,
     editorReadabilityMode,
@@ -307,10 +307,7 @@ export default function TextEditor({
     setEditorFontSize,
   } = useStudioPreferences();
   const monacoThemeName = getMonacoThemeName(theme);
-  const resolvedCompileFeedback = useMemo(
-    () => compileFeedback ?? (errorText ? extractCompileFeedback(errorText, errorText) : null),
-    [compileFeedback, errorText]
-  );
+
 
   useEffect(() => {
     let cancelled = false;
@@ -386,49 +383,7 @@ export default function TextEditor({
     monacoInstance.editor.setTheme(monacoThemeName);
   }, [monacoInstance, monacoThemeName, registerThemes]);
 
-  useEffect(() => {
-    if (!editorRef.current || !monacoRef.current) return;
-    const model = editorRef.current.getModel();
-    if (!model) return;
 
-    const markers = (resolvedCompileFeedback?.diagnostics ?? []).map((diagnostic) => ({
-      startLineNumber: diagnostic.line ?? 1,
-      startColumn: diagnostic.column ?? 1,
-      endLineNumber: diagnostic.line ?? 1,
-      endColumn: Math.max((diagnostic.column ?? 1) + 1, 2),
-      message: diagnostic.message,
-      severity: diagnostic.severity === 'warning'
-        ? monacoRef.current!.MarkerSeverity.Warning
-        : monacoRef.current!.MarkerSeverity.Error,
-    }));
-
-    monacoRef.current.editor.setModelMarkers(model, 'compiler', markers);
-
-    if (!compileDecorationsRef.current) {
-      compileDecorationsRef.current = editorRef.current.createDecorationsCollection([]);
-    }
-
-    if (!resolvedCompileFeedback?.line) {
-      compileDecorationsRef.current.clear();
-      lastRevealedCompileLineRef.current = null;
-      return;
-    }
-
-    compileDecorationsRef.current.set([{
-      range: new monacoRef.current.Range(resolvedCompileFeedback.line, 1, resolvedCompileFeedback.line, 1),
-      options: {
-        isWholeLine: true,
-        className: 'sticial-compile-error-line',
-        glyphMarginClassName: 'sticial-compile-error-glyph',
-        linesDecorationsClassName: 'sticial-compile-error-line-decoration',
-      },
-    }]);
-
-    if (lastRevealedCompileLineRef.current !== resolvedCompileFeedback.line) {
-      editorRef.current.revealLineInCenterIfOutsideViewport(resolvedCompileFeedback.line);
-      lastRevealedCompileLineRef.current = resolvedCompileFeedback.line;
-    }
-  }, [monacoInstance, resolvedCompileFeedback]);
 
   const monacoLang = language === 'python' ? 'python' : 'cpp';
   const label = fileName || (language === 'python' ? 'main.py' : 'main.cpp');
@@ -512,17 +467,7 @@ export default function TextEditor({
         </div>
       ) : null}
 
-      {resolvedCompileFeedback ? (
-        <div className="flex items-start gap-3 border-b border-rose-500/18 bg-rose-500/10 px-4 py-2 text-sm text-rose-200">
-          <div className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full bg-rose-400 shadow-[0_0_10px_rgba(248,113,113,0.45)]" />
-          <div className="min-w-0">
-            <p className="font-semibold text-rose-100">
-              {resolvedCompileFeedback.line ? `Compiler found an issue on line ${resolvedCompileFeedback.line}.` : 'Compiler found an issue.'}
-            </p>
-            <p className="mt-0.5 break-words text-xs text-rose-200/90">{resolvedCompileFeedback.message}</p>
-          </div>
-        </div>
-      ) : null}
+
 
       <div className="min-h-0 flex-1 overflow-hidden" style={{ background: bgStyle }}>
         {monacoInstance ? (
