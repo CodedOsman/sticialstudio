@@ -1953,164 +1953,55 @@ const handleGenerate = useCallback((force = false) => {
 
 
 
-      <aside className="flex w-[252px] shrink-0 flex-col border-r border-[color:var(--blockly-sidebar-border)] bg-[var(--blockly-sidebar-bg)]">
-        <div className="border-b border-[color:var(--blockly-sidebar-border)] px-4 py-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--blockly-sidebar-kicker)]">Code with blocks</p>
-              <p className="mt-2 text-base font-semibold text-[color:var(--blockly-sidebar-text)]">{boardLabel(currentBoard)}</p>
-            </div>
-            <span className="rounded-full border border-[color:var(--blockly-sidebar-border-strong)] bg-[color:var(--blockly-sidebar-chip)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--blockly-sidebar-text-soft)]">
-              {LEARNING_LEVEL_LABELS[toolboxLearningLevel]}
-            </span>
-          </div>
-
-          <label className="mt-4 flex h-11 items-center gap-3 rounded-[18px] border border-[color:var(--blockly-sidebar-border)] bg-[color:var(--blockly-sidebar-input-bg)] px-3 text-[color:var(--blockly-sidebar-text-soft)] transition-colors focus-within:border-[color:var(--blockly-sidebar-accent)] focus-within:text-[color:var(--blockly-sidebar-text)]">
-            <Search size={15} />
-            <input
-              value={categoryQuery}
-              onChange={(event) => setCategoryQuery(event.target.value)}
-              placeholder="Search what you want to do"
-              className="w-full bg-transparent text-sm text-[color:var(--blockly-sidebar-text)] outline-none placeholder:text-[color:var(--blockly-sidebar-text-soft)]/70"
-            />
-          </label>
-
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            {TOOLBOX_LEARNING_LEVELS.map((level) => {
-              const isActive = toolboxLearningLevel === level;
-              return (
-                <button
-                  key={level}
-                  type="button"
-                  onClick={() => setToolboxLearningLevel(level)}
-                  className={`rounded-[14px] border px-3 py-2 text-[11px] font-semibold transition-all ${
-                    isActive
-                      ? 'border-violet-300/30 bg-[linear-gradient(180deg,#8a56ff_0%,#7641ea_100%)] text-white shadow-[0_20px_34px_-24px_rgba(118,65,234,0.76)]'
-                      : 'border-[color:var(--blockly-sidebar-border)] bg-[color:var(--blockly-sidebar-card)] text-[color:var(--blockly-sidebar-text-soft)] hover:border-[color:var(--blockly-sidebar-border-strong)] hover:text-[color:var(--blockly-sidebar-text)]'
-                  }`}
-                >
-                  {LEARNING_LEVEL_LABELS[level]}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className={`mt-4 rounded-[22px] border px-4 py-4 shadow-[0_20px_38px_-28px_rgba(15,23,42,0.58)] ${learningGuideToneClass}`}>
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em]">
-              <Sparkles size={13} />
-              Next step
-            </div>
-            <div className="mt-3">
-              <p className="text-sm font-semibold">{learningGuide.title}</p>
-              <p className="mt-1 text-xs leading-5 opacity-90">{learningGuide.detail}</p>
-            </div>
-            {learningGuideActionLabel ? (
+      <aside className="flex w-[72px] shrink-0 flex-col items-center border-r border-[color:var(--blockly-sidebar-border)] bg-[var(--blockly-sidebar-bg)] py-4 gap-4 z-10 relative">
+        <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto w-full px-2 flex flex-col items-center gap-3">
+          {filteredCategories.map((category) => {
+            const isActive = activeCategoryName === category.id;
+            const isLocked = category.isEmpty;
+            return (
               <button
+                key={category.id}
                 type="button"
-                onClick={() => handleGuideAction(learningGuide.actionId)}
-                className="mt-3 inline-flex h-10 items-center justify-center rounded-[14px] border border-white/12 bg-white/[0.08] px-4 text-xs font-semibold text-current transition-all hover:-translate-y-0.5 hover:bg-white/[0.12]"
+                onClick={() => handleCategorySelect(category.id)}
+                disabled={isLocked}
+                title={category.label}
+                className={`group flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[16px] border transition-all ${
+                  isActive
+                    ? 'border-violet-300/35 bg-[linear-gradient(180deg,#8a56ff_0%,#7641ea_100%)] text-white shadow-[0_8px_16px_-6px_rgba(134,78,251,0.72)]'
+                    : isLocked
+                      ? 'border-[color:var(--blockly-sidebar-border)] bg-[color:var(--blockly-sidebar-card)] opacity-50'
+                      : 'border-transparent bg-transparent hover:bg-[color:var(--blockly-sidebar-card-strong)]'
+                }`}
               >
-                {learningGuideActionLabel}
-              </button>
-            ) : null}
-          </div>
-
-          {shouldShowDisplayWizard && displayWizardOptions.length > 0 ? (
-            <div className="mt-4 rounded-[22px] border border-[color:var(--blockly-sidebar-border-strong)] bg-[color:var(--blockly-sidebar-card)] p-3 shadow-[0_20px_36px_-28px_rgba(15,23,42,0.55)]">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[color:var(--blockly-sidebar-text-soft)]">
-                <Wand2 size={13} />
-                Display starter
-              </div>
-              <div className="mt-3 space-y-2">
-                {displayWizardOptions.map((starter) => (
-                  <button
-                    key={starter.id}
-                    type="button"
-                    onClick={() => insertDisplayStarter(starter.id)}
-                    className="w-full rounded-[16px] border border-[color:var(--blockly-sidebar-border)] bg-[color:var(--blockly-sidebar-input-bg)] px-3 py-3 text-left transition-all hover:-translate-y-0.5 hover:border-[color:var(--blockly-sidebar-accent)]/70 hover:bg-[color:var(--blockly-sidebar-card-strong)]"
-                  >
-                    <div className="text-sm font-semibold text-[color:var(--blockly-sidebar-text)]">{starter.label}</div>
-                    <div className="mt-1 text-xs leading-5 text-[color:var(--blockly-sidebar-text-soft)]">{starter.description}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-3">
-          <div className="space-y-2">
-            {filteredCategories.map((category) => {
-              const isActive = activeCategoryName === category.id;
-              const isLocked = category.isEmpty;
-              return (
-                <button
-                  key={category.id}
-                  type="button"
-                  onClick={() => handleCategorySelect(category.id)}
-                  disabled={isLocked}
-                  className={`group flex w-full items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition-all ${
-                    isActive
-                      ? 'border-violet-300/35 bg-[linear-gradient(180deg,#8a56ff_0%,#7641ea_100%)] text-white shadow-[0_22px_38px_-26px_rgba(134,78,251,0.72)]'
-                      : isLocked
-                        ? 'border-[color:var(--blockly-sidebar-border)] bg-[color:var(--blockly-sidebar-card)] text-[color:var(--blockly-sidebar-text-soft)] opacity-70'
-                        : 'border-[color:var(--blockly-sidebar-border)] bg-[color:var(--blockly-sidebar-card)] text-[color:var(--blockly-sidebar-text)] hover:border-[color:var(--blockly-sidebar-border-strong)] hover:bg-[color:var(--blockly-sidebar-card-strong)] hover:text-[color:var(--blockly-sidebar-text)]'
-                  }`}
+                <span
+                  className="flex h-[32px] w-[32px] items-center justify-center rounded-[10px] text-white shadow-sm"
+                  style={{ backgroundColor: category.color }}
                 >
-                  <span
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] text-white shadow-[0_18px_36px_-26px_rgba(0,0,0,0.7)]"
-                    style={{ backgroundColor: category.color }}
-                  >
-                    {category.icon}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold">{category.label}</span>
-                    <span className="mt-0.5 block text-xs leading-5 text-[color:var(--blockly-sidebar-text-soft)] group-hover:text-[color:var(--blockly-sidebar-text)]">
-                      {isLocked ? 'Build the matching part to unlock these blocks.' : category.description}
-                    </span>
-                  </span>
-                  <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${
-                    isActive
-                      ? 'border-white/18 bg-white/14 text-white'
-                      : 'border-[color:var(--blockly-sidebar-border)] bg-[color:var(--blockly-sidebar-input-bg)] text-[color:var(--blockly-sidebar-text-soft)]'
-                  }`}>
-                    {isLocked ? 'Locked' : category.blockCount}
-                  </span>
-                </button>
-              );
-            })}
-
-            <button
-              type="button"
-              onClick={handleOpenCategoryManager}
-              className={`group flex w-full items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition-all ${
-                isCategoryManagerOpen
-                  ? 'border-violet-300/35 bg-[linear-gradient(180deg,#1f1f22_0%,#111115_100%)] text-white shadow-[0_22px_38px_-26px_rgba(0,0,0,0.72)]'
-                  : 'border-[color:var(--blockly-sidebar-border)] bg-[color:var(--blockly-sidebar-card)] text-[color:var(--blockly-sidebar-text)] hover:border-[color:var(--blockly-sidebar-border-strong)] hover:bg-[color:var(--blockly-sidebar-card-strong)] hover:text-[color:var(--blockly-sidebar-text)]'
-              }`}
-            >
-              <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] text-white shadow-[0_18px_36px_-26px_rgba(0,0,0,0.7)]"
-                style={{ backgroundColor: moreBlocksCategory.color }}
-              >
-                {moreBlocksCategory.icon}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold">{moreBlocksCategory.label}</span>
-                <span className="mt-0.5 block text-xs leading-5 text-[color:var(--blockly-sidebar-text-soft)] group-hover:text-[color:var(--blockly-sidebar-text)]">
-                  {moreBlocksCategory.description}
+                  {category.icon}
                 </span>
-              </span>
-            </button>
+              </button>
+            );
+          })}
 
-            {filteredCategories.length === 0 ? (
-              <div className="mt-4 rounded-[18px] border border-dashed border-[color:var(--blockly-sidebar-border)] bg-[color:var(--blockly-sidebar-card)] px-4 py-4 text-sm text-[color:var(--blockly-sidebar-text-soft)]">
-                {categoryQuery.trim().length > 0
-                  ? `No block groups match "${categoryQuery}".`
-                  : 'All block groups are hidden. Open Customize to choose what shows here.'}
-              </div>
-            ) : null}
-          </div>
+          <div className="h-px w-8 bg-[color:var(--blockly-sidebar-border)] my-1 shrink-0" />
+
+          <button
+            type="button"
+            onClick={handleOpenCategoryManager}
+            title="More Blocks"
+            className={`group flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[16px] border transition-all ${
+              isCategoryManagerOpen
+                ? 'border-violet-300/35 bg-[linear-gradient(180deg,#1f1f22_0%,#111115_100%)] text-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.72)]'
+                : 'border-transparent bg-transparent hover:bg-[color:var(--blockly-sidebar-card-strong)]'
+            }`}
+          >
+            <span
+              className="flex h-[32px] w-[32px] items-center justify-center rounded-[10px] text-white shadow-sm"
+              style={{ backgroundColor: moreBlocksCategory.color }}
+            >
+              {moreBlocksCategory.icon}
+            </span>
+          </button>
         </div>
       </aside>
 

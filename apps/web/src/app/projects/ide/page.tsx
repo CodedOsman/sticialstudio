@@ -32,19 +32,9 @@ export default function Workspace() {
             return;
         }
 
-        if (!projectId && !environment) {
-            router.replace('/projects/select-environment');
-            return;
-        }
-
-        if (!projectId && !codingMode) {
-            const params = new URLSearchParams();
-            if (environment) {
-                params.set('environment', environment);
-            }
-            router.replace(params.toString() ? `/projects/select-mode?${params.toString()}` : '/projects/select-mode');
-        }
-    }, [codingMode, environment, hasHydrated, projectId, router]);
+        // We bypass the old onboarding setup so that the IDE opens directly
+        // using the default codingMode ('block') and environment ('physical').
+    }, [hasHydrated]);
 
     useEffect(() => {
         if (!hasHydrated || projectId || !codingMode || !currentBoard || !environment || initRef.current) {

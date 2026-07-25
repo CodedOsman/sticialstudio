@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { WorkspaceSvg } from "blockly";
 
@@ -28,7 +28,7 @@ export default function BlocklyWorkspace({
   isCompact = false,
 }: BlocklyWorkspaceProps) {
   return (
-    <section className="relative flex h-full w-full min-h-0 min-w-0 flex-1 overflow-hidden rounded-[30px] border border-white/8 bg-[linear-gradient(180deg,#10131f_0%,#090c16_100%)] shadow-[0_28px_72px_-48px_rgba(0,0,0,1)]">
+    <section className="relative flex h-full w-full min-h-0 min-w-0 flex-1 overflow-hidden bg-[linear-gradient(180deg,#10131f_0%,#090c16_100%)]">
       <BlockEditor
         generatorType={generatorType}
         initialXml={initialXml}

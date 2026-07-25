@@ -2,7 +2,8 @@
     "name": "stemaide-web-studio",
     "private": true,
     "version": "0.1.0",
-    "description": "STEMAIDE Web Studio Ã¢â‚¬â€ modern educational platform for Arduino-based coding and hardware projects.",
+    "packageManager": "npm@10.8.2",
+    "description": "STEMAIDE Web Studio Ã¢â‚¬â€  modern educational platform for Arduino-based coding and hardware projects.",
     "type": "module",
     "workspaces": [
         "apps/*",

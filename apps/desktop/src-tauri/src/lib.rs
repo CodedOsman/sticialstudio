@@ -2,7 +2,6 @@ use tauri_plugin_shell::ShellExt;
 use serde::Deserialize;
 use std::fs;
 use std::path::PathBuf;
-use tauri::Manager;
 
 #[derive(Deserialize)]
 pub struct ProjectFile {
@@ -20,7 +19,7 @@ pub struct CompilePayload {
     pub entry_file_path: Option<String>,
 }
 
-fn write_sketch_to_temp(app: &tauri::AppHandle, payload: &CompilePayload) -> Result<PathBuf, String> {
+fn write_sketch_to_temp(_app: &tauri::AppHandle, payload: &CompilePayload) -> Result<PathBuf, String> {
     let temp_dir = std::env::temp_dir().join("stemaide_sketch");
     if temp_dir.exists() {
         fs::remove_dir_all(&temp_dir).map_err(|e| e.to_string())?;

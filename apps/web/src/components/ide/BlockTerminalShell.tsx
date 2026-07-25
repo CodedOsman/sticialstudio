@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Link2, Radio, TerminalSquare, Zap } from "lucide-react";
@@ -84,32 +84,6 @@ export default function BlockTerminalShell({
     setActiveTab(tab);
     onTabChange?.(tab);
   };
-
-  if (collapsed) {
-    return (
-      <section className="ui-foundation-panel flex h-12 items-center justify-between rounded-[22px] px-4 shadow-[0_20px_40px_-32px_rgba(0,0,0,0.42)]">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[12px] border border-[color:var(--ui-color-primary)]/24 bg-[color:var(--ui-color-primary)]/12 text-[var(--ui-color-primary)]">
-            <TerminalSquare size={14} />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--ui-color-text)]">Terminal</p>
-            <p className="truncate text-xs text-[var(--ui-color-text-soft)]">
-              {webSerial.isConnected ? "Connected to board" : "Disconnected"} - {webSerial.messages.length} messages
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={onToggleCollapsed}
-          className="ui-action-quiet inline-flex h-8 items-center gap-2 rounded-[10px] px-3 text-xs font-semibold transition-all"
-        >
-          Open
-          <ChevronUp size={14} />
-        </button>
-      </section>
-    );
-  }
 
   return (
     <section className="ui-foundation-panel flex h-full min-h-0 flex-col overflow-hidden rounded-[24px] shadow-[0_28px_70px_-42px_rgba(0,0,0,0.42)]">

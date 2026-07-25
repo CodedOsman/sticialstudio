@@ -326,6 +326,7 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
       height={layout.terminalHeight}
       isCompact={layout.isCompact}
       onResizeStart={layout.handleTerminalResize}
+      onToggleCollapsed={() => layout.setBottomCollapsed((prev) => !prev)}
     >
       <IDEErrorBoundary
         zone="Terminal"
@@ -345,6 +346,7 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
       height={layout.effectiveBlockTerminalHeight}
       isCompact={layout.isCompact}
       onResizeStart={layout.handleTerminalResize}
+      onToggleCollapsed={() => layout.setBottomCollapsed((prev) => !prev)}
     >
       <IDEErrorBoundary
         zone="Terminal"
@@ -388,9 +390,11 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
   );
 
   const blockModeStage = (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
       {blockWorkspaceStage}
-      {blockBottomStage}
+      <div className="absolute bottom-0 left-0 right-0 z-50">
+        {blockBottomStage}
+      </div>
     </div>
   );
 
@@ -427,7 +431,7 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
         onVerify={() => eventBus.emit('compile:verify-request', undefined)}
         onUpload={() => eventBus.emit('compile:upload-request', undefined)}
         onConnectDevice={() => eventBus.emit('device:connect-toggle-request', undefined)}
-        onSelectBoard={() => router.push('/projects/select-board')}
+        onChangeBoard={(board) => editor.setCurrentBoard(board as any)}
         onSaveProject={() => eventBus.emit('project:save-request', { origin: 'manual' })}
         onOpenProject={() => router.push('/dashboard')}
         onNewSketch={handleRequestNewSketch}
@@ -443,7 +447,7 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
       {preferencesDialog}
 
       {editor.isBlockMode ? (
-        <div className="mt-3 flex min-h-0 flex-1 px-3 pb-3">{blockModeStage}</div>
+        <div className="flex min-h-0 flex-1">{blockModeStage}</div>
       ) : (
         <div className="flex min-h-0 w-full flex-1 overflow-hidden">
           <IdeActivityBar

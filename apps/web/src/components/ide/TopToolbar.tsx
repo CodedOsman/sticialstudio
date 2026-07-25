@@ -25,7 +25,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { fadeInUp } from "@/components/ui/motion";
 import ThemeToggle from '@/components/layout/ThemeToggle';
-
+import { BOARD_CONFIG } from '@/lib/boards/boardConfig';
 
 type TopToolbarVariant = "default" | "arduino-text";
 
@@ -47,7 +47,7 @@ interface TopToolbarProps {
   onVerify: () => void;
   onUpload: () => void;
   onConnectDevice: () => void;
-  onSelectBoard: () => void;
+  onChangeBoard: (board: string) => void;
   onSaveProject: () => void;
   onOpenProject: () => void;
   onNewSketch: () => void;
@@ -90,7 +90,7 @@ export default function TopToolbar({
   onVerify,
   onUpload,
   onConnectDevice,
-  onSelectBoard,
+  onChangeBoard,
   onSaveProject,
   onOpenProject,
   onNewSketch,
@@ -147,14 +147,20 @@ export default function TopToolbar({
 
             <div className="h-5 w-px bg-[color:var(--ui-border-soft)]" />
 
-            <button
-              type="button"
-              onClick={onSelectBoard}
-              className="flex h-9 items-center gap-1.5 rounded-[10px] border border-[color:var(--ui-border-strong)] bg-[color:var(--ui-surface-elevated)] px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--ui-color-text)] transition-all hover:border-[color:var(--ui-color-primary)]/40 hover:text-[var(--ui-color-primary)]"
-            >
-              <span className="max-w-[140px] truncate">{boardName}</span>
-              <ChevronDown size={12} className="opacity-70" />
-            </button>
+            <div className="relative flex items-center">
+              <select
+                value={boardName}
+                onChange={(e) => onChangeBoard(e.target.value)}
+                className="appearance-none flex h-9 items-center rounded-[10px] border border-[color:var(--ui-border-strong)] bg-[color:var(--ui-surface-elevated)] pl-3 pr-8 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--ui-color-text)] outline-none transition-all hover:border-[color:var(--ui-color-primary)]/40 hover:text-[var(--ui-color-primary)] cursor-pointer"
+              >
+                {Object.keys(BOARD_CONFIG).map(boardKey => (
+                  <option key={boardKey} value={boardKey} className="bg-[color:var(--ui-surface-elevated)] text-[var(--ui-color-text)]">
+                    {boardKey}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={12} className="pointer-events-none absolute right-3 opacity-70 text-[var(--ui-color-text)]" />
+            </div>
 
             {saveStatusText ? (
               <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${saveStatusClass}`}>
@@ -164,6 +170,19 @@ export default function TopToolbar({
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
+            {onChangeCodingMode ? (
+              <button
+                type="button"
+                onClick={() => onChangeCodingMode("block")}
+                className="flex h-9 items-center gap-2 rounded-[10px] px-3 text-xs font-medium text-[var(--ui-color-text-muted)] transition-all hover:bg-[color:var(--ui-surface-elevated)] hover:text-[var(--ui-color-text)]"
+              >
+                <Sparkles size={14} />
+                Switch to Blocks
+              </button>
+            ) : null}
+
+            <div className="mx-1 h-4 w-px bg-[color:var(--ui-border-soft)]" />
+
             <button
               type="button"
               onClick={onSaveProject}
@@ -228,107 +247,133 @@ export default function TopToolbar({
       </motion.header>
     );
   }
+
   if (isBlockWorkspace) {
     return (
       <motion.header
-        className="overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,#10131f_0%,#0a0d18_100%)] shadow-[0_30px_90px_-52px_rgba(0,0,0,1)]"
+        className="z-10 flex-shrink-0 border-b border-[color:var(--ui-border-soft)] bg-[#0b0e14] backdrop-blur-xl"
         variants={fadeInUp}
         initial="hidden"
         animate="visible"
       >
-        <div className="px-4 py-3 sm:px-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-              <button 
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            <button 
+              type="button"
+              onClick={onOpenProject} 
+              className="text-[1.1rem] font-bold tracking-[-0.03em] text-white transition-opacity hover:opacity-80 text-left focus:outline-none"
+              title="Go to Dashboard"
+            >
+              Sticial Studio
+            </button>
+            <div className="h-5 w-px bg-white/10" />
+            <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-slate-300">
+              <Sparkles size={14} className="text-indigo-400" />
+              Blocks
+            </span>
+            {onChangeCodingMode ? (
+              <button
                 type="button"
-                onClick={onOpenProject} 
-                className="text-[1.2rem] font-bold tracking-[-0.05em] text-white transition-opacity hover:opacity-80 text-left focus:outline-none"
-                title="Go to Dashboard"
+                onClick={() => onChangeCodingMode("text")}
+                className="ml-1 flex h-7 items-center gap-1.5 rounded-[6px] px-2 text-[11px] font-medium text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
               >
-                Sticial Studio
+                <Code2 size={13} />
+                Switch to Text
               </button>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
-                <Sparkles size={12} className="text-indigo-300" />
-                Block Coding
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-200">
-                <Sparkles size={12} className="text-sky-300" />
-                {boardName}
-              </span>
-              <span
-                className={`${chipBaseClass} ${
-                  isConnected
-                    ? "border-emerald-400/18 bg-emerald-400/10 text-emerald-200"
-                    : "border-white/10 bg-white/[0.04] text-slate-300"
-                }`}
+            ) : null}
+            <div className="ml-1 mr-1 h-4 w-px bg-white/10" />
+            <div className="relative flex items-center">
+              <Cpu size={14} className="pointer-events-none absolute left-2.5 text-sky-400" />
+              <select
+                value={boardName}
+                onChange={(e) => onChangeBoard(e.target.value)}
+                className="appearance-none cursor-pointer rounded-[8px] border border-sky-400/20 bg-sky-400/10 py-1 pl-8 pr-7 text-[12px] font-medium text-sky-200 outline-none hover:bg-sky-400/20 transition-colors"
               >
-                {isConnected ? <Link2 size={12} /> : <Link2Off size={12} />}
-                {isConnected ? "Connected" : "Not connected"}
-              </span>
-              {saveStatusText ? <span className={`${chipBaseClass} ${saveStatusClass}`}>{saveStatusText}</span> : null}
+                {Object.keys(BOARD_CONFIG).map((boardKey) => (
+                  <option key={boardKey} value={boardKey} className="bg-[#1e1e1e] text-slate-200">
+                    {boardKey}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="pointer-events-none absolute right-2 text-sky-200 opacity-70" />
             </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="secondary"
-                icon={<FolderOpen size={14} />}
-                onClick={onOpenProject}
-                className="min-h-10 rounded-[14px] border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white hover:border-white/16 hover:bg-white/[0.08] hover:text-white"
-              >
-                Dashboard
-              </Button>
-              <Button
-                variant="secondary"
-                icon={<Plus size={14} />}
-                onClick={onNewSketch}
-                className="min-h-10 rounded-[14px] border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white hover:border-white/16 hover:bg-white/[0.08] hover:text-white"
-              >
-                New Sketch
-              </Button>
-              <Button
-                variant="secondary"
-                icon={<Save size={14} />}
-                onClick={onSaveProject}
-                disabled={isSaving}
-                className="min-h-10 rounded-[14px] border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white hover:border-white/16 hover:bg-white/[0.08] hover:text-white"
-              >
-                {isSaving ? "Saving..." : "Save"}
-                {hasUnsavedChanges ? <span className="ml-1 h-2 w-2 rounded-full bg-amber-300" /> : null}
-              </Button>
-              <Button
-                variant="secondary"
-                icon={<CheckCircle2 size={14} />}
-                onClick={onVerify}
-                disabled={isCompiling}
-                className="min-h-10 rounded-[14px] border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white hover:border-white/16 hover:bg-white/[0.08] hover:text-white"
-              >
-                {isCompiling ? "Verifying..." : "Verify"}
-              </Button>
-              <Button
-                icon={<Rocket size={14} />}
-                onClick={onUpload}
-                disabled={isCompiling}
-                className="min-h-10 rounded-[14px] border border-indigo-400/30 bg-[linear-gradient(135deg,#656cf8,#4f56e8)] px-3 py-2 text-sm text-white hover:opacity-90"
-              >
-                {isCompiling ? "Working..." : "Upload to Board"}
-              </Button>
-              <Button
-                variant="secondary"
-                icon={isConnected ? <Link2Off size={14} /> : <Link2 size={14} />}
-                onClick={onConnectDevice}
-                className="min-h-10 rounded-[14px] border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white hover:border-white/16 hover:bg-white/[0.08] hover:text-white"
-              >
-                {isConnected ? "Disconnect" : "Connect"}
-              </Button>
-            </div>
+            <span
+              className={`inline-flex items-center gap-1.5 text-[12px] font-medium ${
+                isConnected ? "text-emerald-300" : "text-slate-400"
+              }`}
+            >
+              {isConnected ? <Link2 size={14} /> : <Link2Off size={14} />}
+              {isConnected ? "Connected" : "Not connected"}
+            </span>
+            {saveStatusText ? <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${saveStatusClass}`}>{saveStatusText}</span> : null}
           </div>
-          {serialError ? (
-            <div className="mt-3 inline-flex items-center gap-2 rounded-[16px] border border-rose-400/24 bg-rose-400/10 px-3 py-2 text-sm text-rose-100">
-              <AlertCircle size={14} />
-              <span>{serialError}</span>
-            </div>
-          ) : null}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={onNewSketch}
+              className="flex h-8 items-center gap-2 rounded-[8px] px-3 text-xs font-medium text-slate-300 transition-all hover:bg-white/10 hover:text-white"
+            >
+              <Plus size={14} />
+              New Sketch
+            </button>
+            <button
+              type="button"
+              onClick={onSaveProject}
+              disabled={isSaving}
+              className="flex h-8 items-center gap-2 rounded-[8px] px-3 text-xs font-medium text-slate-300 transition-all hover:bg-white/10 hover:text-white"
+            >
+              <Save size={14} />
+              {isSaving ? "Saving..." : "Save"}
+              {hasUnsavedChanges ? <span className="h-1.5 w-1.5 rounded-full bg-amber-400" /> : null}
+            </button>
+            
+            <div className="mx-1 h-4 w-px bg-white/10" />
+
+            <button
+              type="button"
+              onClick={onVerify}
+              disabled={isCompiling}
+              className="flex h-8 items-center gap-2 rounded-[8px] border border-emerald-400/20 bg-emerald-400/10 px-3 text-xs font-semibold text-emerald-300 transition-all hover:bg-emerald-400/20 disabled:opacity-60"
+            >
+              <CheckCircle2 size={14} />
+              {isCompiling ? "Verifying..." : "Verify"}
+            </button>
+            <button
+              type="button"
+              onClick={onUpload}
+              disabled={isCompiling}
+              className="flex h-8 items-center gap-2 rounded-[8px] border border-indigo-400/40 bg-indigo-500 px-3 text-xs font-semibold text-white transition-all hover:bg-indigo-600 disabled:opacity-60"
+            >
+              <Rocket size={14} />
+              {isCompiling ? "Working..." : "Upload to Board"}
+            </button>
+            
+            <div className="mx-1 h-4 w-px bg-white/10" />
+
+            <button
+              type="button"
+              onClick={onConnectDevice}
+              className="flex h-8 items-center gap-2 rounded-[8px] px-3 text-xs font-medium text-slate-300 transition-all hover:bg-white/10 hover:text-white"
+            >
+              {isConnected ? <Link2Off size={14} /> : <Link2 size={14} />}
+              {isConnected ? "Disconnect" : "Connect"}
+            </button>
+            <button
+              type="button"
+              onClick={onOpenPreferences}
+              className="flex h-8 w-8 items-center justify-center rounded-[8px] text-slate-400 transition-all hover:bg-white/10 hover:text-white"
+            >
+              <Settings2 size={14} />
+            </button>
+          </div>
         </div>
+        {serialError ? (
+          <div className="mx-4 mb-2 inline-flex items-center gap-2 rounded-[8px] border border-rose-400/20 bg-rose-400/10 px-3 py-1.5 text-xs text-rose-200">
+            <AlertCircle size={14} />
+            <span>{serialError}</span>
+          </div>
+        ) : null}
       </motion.header>
     );
   }
@@ -419,9 +464,20 @@ export default function TopToolbar({
             >
               {isConnected ? "Disconnect" : "Connect"}
             </Button>
-            <Button variant="secondary" icon={<ChevronDown size={16} />} onClick={onSelectBoard} className="min-h-10 rounded-[16px] px-4 py-2 text-sm">
-              Board
-            </Button>
+            <div className="relative flex items-center">
+              <select
+                value={boardName}
+                onChange={(e) => onChangeBoard(e.target.value)}
+                className="appearance-none flex h-10 items-center justify-between gap-2 rounded-[16px] border-none bg-secondary pl-4 pr-10 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80 outline-none cursor-pointer"
+              >
+                {Object.keys(BOARD_CONFIG).map((boardKey) => (
+                  <option key={boardKey} value={boardKey} className="bg-[color:var(--ui-surface-elevated)] text-[var(--ui-color-text)]">
+                    {boardKey}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="pointer-events-none absolute right-4 text-secondary-foreground opacity-80" />
+            </div>
             {onChangeCodingMode && !isBlockWorkspace ? (
               <Button variant="secondary" icon={<Sparkles size={16} />} onClick={() => onChangeCodingMode("block")} className="min-h-10 rounded-[16px] px-4 py-2 text-sm text-[var(--ui-color-primary)]">
                 Blocks

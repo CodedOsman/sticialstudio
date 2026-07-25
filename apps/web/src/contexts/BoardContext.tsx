@@ -105,11 +105,11 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     const initialConfig = BOARD_CONFIG[defaultBoard];
 
     const [currentBoard, setCurrentBoard] = useState<BoardKey>(defaultBoard);
-    const [codingMode, setCodingMode] = useState<CodingMode>(null);
+    const [codingMode, setCodingMode] = useState<CodingMode>('block');
     const [language, setLanguage] = useState<string | null>(initialConfig.language ?? null);
     const [generator, setGenerator] = useState<string | null>(initialConfig.generator ?? null);
     const [isFullScreen, setIsFullScreen] = useState(false);
-    const [environment, setEnvironment] = useState<HardwareEnvironment | null>(null);
+    const [environment, setEnvironment] = useState<HardwareEnvironment | null>('physical');
     const [pendingProjectIntent, setPendingProjectIntentState] = useState<PendingProjectIntent | null>(null);
     const [hasHydrated, setHasHydrated] = useState(false);
 

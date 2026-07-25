@@ -62,7 +62,7 @@ function stringArrayEqual(left: string[], right: string[]) {
 
 const initialState: BlocklyStoreState = {
   selectedCategoryName: "start",
-  showCodePanel: true,
+  showCodePanel: false,
   codePanelWidth: BLOCKLY_CODE_PANEL_DEFAULT_WIDTH,
   isCodePanelResizing: false,
   generatedPreviewCode: "",
@@ -73,7 +73,7 @@ const initialState: BlocklyStoreState = {
   blockCount: 0,
   categoryQuery: "",
   isFlyoutVisible: true,
-  toolboxLearningLevel: "starter",
+  toolboxLearningLevel: "explore",
 };
 
 export const useBlocklyStore = create<BlocklyStore>()(
