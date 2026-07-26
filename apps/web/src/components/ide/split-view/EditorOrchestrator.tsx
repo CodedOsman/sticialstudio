@@ -46,6 +46,7 @@ export interface EditorOrchestratorValue {
   blocklyXml: string;
   selectedBlocklyCategory: string;
   setSelectedBlocklyCategory: (category: string) => void;
+  setCurrentBoard: (board: keyof typeof BOARD_CONFIG) => void;
   handleEntrySourceCodeChange: (newCode: string) => void;
   handleActiveTextCodeChange: (newCode: string) => void;
   handleBlocklyXmlChange: (xml: string) => void;
@@ -459,6 +460,7 @@ export function useBlocklySync(): EditorOrchestratorValue {
     codingMode,
     compileStrategy,
     environment,
+    setCurrentBoard,
     isBlockMode,
     preferredSourceFileName,
     entrySourceFile,
