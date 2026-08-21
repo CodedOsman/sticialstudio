@@ -208,7 +208,7 @@ export function useBlocklySync(): EditorOrchestratorValue {
     () =>
       files
         .filter((file) => {
-          if (file.type === 'folder' || file.id === blocklyFile?.id) {
+          if (file.type === 'folder' || file.id === blocklyFile?.id || file.id === entrySourceFile?.id) {
             return false;
           }
 

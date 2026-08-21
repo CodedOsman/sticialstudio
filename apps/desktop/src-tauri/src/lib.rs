@@ -58,11 +58,54 @@ async fn compile_sketch(app: tauri::AppHandle, payload: CompilePayload) -> Resul
 }
 
 #[tauri::command]
-async fn upload_sketch(app: tauri::AppHandle, payload: CompilePayload, port: String) -> Result<String, String> {
+async fn upload_sketch(app: tauri::AppHandle, payload: CompilePayload, mut port: String) -> Result<String, String> {
+    if port.is_empty() {
+        // Auto-detect port using arduino-cli board list
+        let list_cmd = app.shell().sidecar("arduino-cli").map_err(|e| e.to_string())?
+            .args(["board", "list", "--format", "json"]);
+        
+        let output = list_cmd.output().await.map_err(|e| e.to_string())?;
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&stdout) {
+                if let Some(detected_ports) = v.get("detected_ports").and_then(|p| p.as_array()) {
+                    for detected_port in detected_ports {
+                        // Prefer a port that has matching boards (which means it's recognized as an Arduino)
+                        if let Some(matching_boards) = detected_port.get("matching_boards").and_then(|b| b.as_array()) {
+                            if !matching_boards.is_empty() {
+                                if let Some(p) = detected_port.get("port") {
+                                    if let Some(addr) = p.get("address") {
+                                        port = addr.as_str().unwrap_or("").to_string();
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // If no board explicitly matched, just fallback to the first port available
+                    if port.is_empty() {
+                        if let Some(first_port) = detected_ports.first() {
+                            if let Some(p) = first_port.get("port") {
+                                if let Some(addr) = p.get("address") {
+                                    port = addr.as_str().unwrap_or("").to_string();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if port.is_empty() {
+        return Err("No upload port found. Make sure your board is connected to the computer.".to_string());
+    }
+
     let sketch_dir = write_sketch_to_temp(&app, &payload)?;
 
     let sidecar_command = app.shell().sidecar("arduino-cli").map_err(|e| e.to_string())?
-        .args(["upload", "-p", &port, "--fqbn", &payload.board, &sketch_dir.to_string_lossy()]);
+        .args(["compile", "--upload", "-p", &port, "--fqbn", &payload.board, &sketch_dir.to_string_lossy()]);
     
     let output = sidecar_command.output().await.map_err(|e| e.to_string())?;
     

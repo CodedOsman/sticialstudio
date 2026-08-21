@@ -113,6 +113,21 @@ function getArduinoLedPin(block: Blockly.Block) {
     return `  delay(${ms});\n`;
 };
 
+(arduinoGenerator as any).forBlock['time_delay'] = function (block: Blockly.Block) {
+    const ms = (arduinoGenerator as any).valueToCode(block, 'MS', (arduinoGenerator as any).ORDER_NONE) || '1000';
+    return `  delay(${ms});\n`;
+};
+
+(arduinoGenerator as any).forBlock['time_wait_seconds'] = function (block: Blockly.Block) {
+    const seconds = (arduinoGenerator as any).valueToCode(block, 'SECONDS', (arduinoGenerator as any).ORDER_NONE) || '1';
+    return `  delay((${seconds}) * 1000);\n`;
+};
+
+(arduinoGenerator as any).forBlock['time_wait_until'] = function (block: Blockly.Block) {
+    const condition = (arduinoGenerator as any).valueToCode(block, 'BOOL', (arduinoGenerator as any).ORDER_NONE) || 'false';
+    return `  while (!(${condition})) {\n    delay(1);\n  }\n`;
+};
+
 (arduinoGenerator as any).forBlock['arduino_digitalRead'] = function (block: Blockly.Block) {
     const pin = block.getFieldValue('PIN');
     return [`digitalRead(${pin})`, (arduinoGenerator as any).ORDER_ATOMIC];
@@ -751,6 +766,24 @@ function getMicroPythonLedConfig(block: Blockly.Block) {
     const ms = block.getFieldValue('MS');
     getMicroPythonState(micropythonGenerator).imports_.add('time');
     return `time.sleep_ms(${ms})\n`;
+};
+
+(micropythonGenerator as any).forBlock['time_delay'] = function (block: Blockly.Block) {
+    const ms = (micropythonGenerator as any).valueToCode(block, 'MS', (micropythonGenerator as any).ORDER_NONE) || '1000';
+    getMicroPythonState(micropythonGenerator).imports_.add('time');
+    return `time.sleep_ms(${ms})\n`;
+};
+
+(micropythonGenerator as any).forBlock['time_wait_seconds'] = function (block: Blockly.Block) {
+    const seconds = (micropythonGenerator as any).valueToCode(block, 'SECONDS', (micropythonGenerator as any).ORDER_NONE) || '1';
+    getMicroPythonState(micropythonGenerator).imports_.add('time');
+    return `time.sleep(${seconds})\n`;
+};
+
+(micropythonGenerator as any).forBlock['time_wait_until'] = function (block: Blockly.Block) {
+    const condition = (micropythonGenerator as any).valueToCode(block, 'BOOL', (micropythonGenerator as any).ORDER_NONE) || 'False';
+    getMicroPythonState(micropythonGenerator).imports_.add('time');
+    return `while not (${condition}):\n    time.sleep_ms(1)\n`;
 };
 
 (micropythonGenerator as any).forBlock['arduino_digitalRead'] = function (block: Blockly.Block) {

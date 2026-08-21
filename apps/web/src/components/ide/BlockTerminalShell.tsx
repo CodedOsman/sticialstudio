@@ -36,18 +36,7 @@ function getMessageChannel(message: SerialMessage): BlockTerminalTab {
   return "serial";
 }
 
-function toneForMessage(type: SerialMessage["type"]) {
-  switch (type) {
-    case "system":
-      return "border border-sky-400/18 bg-sky-400/10 text-sky-100";
-    case "error":
-      return "border border-rose-400/20 bg-rose-400/10 text-rose-100";
-    case "sent":
-      return "border border-emerald-400/20 bg-emerald-400/10 text-emerald-100";
-    default:
-      return "ui-elevated-surface text-[var(--ui-color-text-on-surface)]";
-  }
-}
+
 
 export default function BlockTerminalShell({
   webSerial,
@@ -86,35 +75,33 @@ export default function BlockTerminalShell({
   };
 
   return (
-    <section className="ui-foundation-panel flex h-full min-h-0 flex-col overflow-hidden rounded-[24px] shadow-[0_28px_70px_-42px_rgba(0,0,0,0.42)]">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--ui-border-soft)] px-4 py-3">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden bg-black font-mono text-gray-300">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-800 px-4 py-1 text-xs">
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--ui-color-primary)]/76">Terminal Dock</p>
-          <p className="mt-1 text-sm ui-panel-copy-soft">Serial, upload, and device feedback for block projects.</p>
+          <p className="font-bold uppercase tracking-wider text-gray-400">CMD</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <span
-            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+            className={`inline-flex items-center gap-2 text-[10px] uppercase tracking-wider ${
               webSerial.isConnected
-                ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-100"
-                : "ui-pill-surface text-[var(--ui-color-text-soft)]"
+                ? "text-green-500"
+                : "text-gray-500"
             }`}
           >
-            <Radio size={12} />
-            {webSerial.isConnected ? "Connected" : "Disconnected"}
+            {webSerial.isConnected ? "CONNECTED" : "DISCONNECTED"}
           </span>
           <button
             type="button"
             onClick={onToggleCollapsed}
-            className="ui-action-quiet inline-flex h-9 items-center gap-2 rounded-[12px] px-3 text-xs font-semibold transition-all"
+            className="inline-flex items-center gap-1 text-[10px] text-gray-500 transition-colors hover:text-gray-300 uppercase tracking-wider"
           >
-            Collapse
-            <ChevronDown size={14} />
+            COLLAPSE
+            <ChevronDown size={12} />
           </button>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-[color:var(--ui-border-soft)] px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-4 border-b border-gray-800 px-4 pt-2">
         {TAB_OPTIONS.map((tab) => {
           const isActive = activeTab === tab.id;
           const count = tab.id === "serial" ? serialMessages.length : tab.id === "build" ? buildMessages.length : connectionMessages.length;
@@ -123,15 +110,14 @@ export default function BlockTerminalShell({
               key={tab.id}
               type="button"
               onClick={() => handleTabChange(tab.id)}
-              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
+              className={`inline-flex items-center gap-2 border-b-2 px-1 pb-2 text-xs transition-all uppercase tracking-wider ${
                 isActive
-                  ? 'ui-tab-active shadow-[0_14px_26px_-18px_rgba(0,0,0,0.28)]'
-                  : 'ui-pill-surface text-[var(--ui-color-text-soft)] hover:bg-[color:var(--ui-surface-elevated)] hover:text-[var(--ui-color-text-on-surface)]'
+                  ? 'border-gray-300 text-gray-200'
+                  : 'border-transparent text-gray-600 hover:text-gray-400'
               }`}
             >
-              {tab.icon}
               {tab.label}
-              <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] font-bold opacity-90">{count}</span>
+              <span className="text-[10px] opacity-70">[{count}]</span>
             </button>
           );
         })}
@@ -149,23 +135,30 @@ export default function BlockTerminalShell({
 
         {activeTab === "build" ? (
           <div className="flex h-full min-h-0 flex-col">
-            <div className="border-b border-[color:var(--ui-border-soft)] px-4 py-3 text-xs ui-panel-copy-quiet">
-              Verify, upload, sync, and flash events appear here while the block project talks to the board toolchain.
+            <div className="border-b border-gray-800 px-4 py-1 text-[10px] text-gray-500 uppercase tracking-wider">
+              Verify, upload, sync, and flash events
             </div>
-            <div className="custom-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto p-4">
+            <div className="custom-scrollbar min-h-0 flex-1 space-y-0 overflow-y-auto px-4 py-2">
               {buildMessages.length > 0 ? (
-                buildMessages.map((message, index) => (
-                  <div key={`${message.timestamp}-${index}`} className={`rounded-[12px] px-3 py-2 ${toneForMessage(message.type)}`}>
-                    <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] opacity-80">{message.type}</div>
-                    <div className="whitespace-pre-wrap break-words text-xs leading-5">{message.text}</div>
+                buildMessages.map((message, index) => {
+                  let prefix = '';
+                  let colorClass = 'text-gray-300';
+                  switch (message.type) {
+                      case 'system': prefix = '[SYSTEM] '; colorClass = 'text-sky-300'; break;
+                      case 'error': prefix = '[ERROR] '; colorClass = 'text-red-400'; break;
+                      case 'sent': prefix = '> '; colorClass = 'text-green-400'; break;
+                  }
+                  return (
+                  <div key={`${message.timestamp}-${index}`} className={`whitespace-pre-wrap break-all text-xs leading-5 ${colorClass}`}>
+                    <span className="opacity-70">{prefix}</span>
+                    {message.text}
                   </div>
-                ))
+                  );
+                })
               ) : (
-                <div className="flex h-full min-h-[120px] items-center justify-center text-center">
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--ui-color-text-soft)]">No build activity yet</p>
-                    <p className="text-xs ui-panel-copy-quiet">Run Verify or Upload to start filling this stream.</p>
-                  </div>
+                <div className="text-gray-600 text-xs">
+                  <p>C:\Users\User\Project&gt; No build activity yet</p>
+                  <p>Run Verify or Upload to start filling this stream.</p>
                 </div>
               )}
             </div>
@@ -173,25 +166,25 @@ export default function BlockTerminalShell({
         ) : null}
 
         {activeTab === "connection" ? (
-          <div className="custom-scrollbar h-full overflow-y-auto p-4">
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="ui-elevated-surface rounded-[18px] p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--ui-color-text-soft)]">Status</p>
-                <p className="mt-3 text-lg font-semibold text-[var(--ui-color-text-on-surface)]">
+          <div className="custom-scrollbar h-full overflow-y-auto p-4 text-xs leading-5">
+            <div className="grid gap-6 md:grid-cols-2">
+              <div>
+                <p className="font-bold uppercase tracking-wider text-gray-500">Status</p>
+                <p className="mt-1 text-gray-300">
                   {webSerial.isConnected ? "Board connected" : "Waiting for a board"}
                 </p>
-                <p className="mt-2 text-sm leading-6 ui-panel-copy-quiet">
+                <p className="mt-1 text-gray-600">
                   {webSerial.isConnected
                     ? "Serial communication is available. You can monitor output here while you build with blocks."
                     : "Use Connect in the top bar or open the Serial Monitor tab to choose a baud rate and attach a device."}
                 </p>
               </div>
-              <div className="ui-elevated-surface rounded-[18px] p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--ui-color-text-soft)]">Browser support</p>
-                <p className="mt-3 text-lg font-semibold text-[var(--ui-color-text-on-surface)]">
+              <div>
+                <p className="font-bold uppercase tracking-wider text-gray-500">Browser support</p>
+                <p className="mt-1 text-gray-300">
                   {isSerialSupported ? "Web Serial ready" : "Web Serial unavailable"}
                 </p>
-                <p className="mt-2 text-sm leading-6 ui-panel-copy-quiet">
+                <p className="mt-1 text-gray-600">
                   {isSerialSupported
                     ? "This browser can open serial devices for the block environment."
                     : "Serial features need a browser with Web Serial support, such as Chrome or Edge."}
@@ -199,17 +192,27 @@ export default function BlockTerminalShell({
               </div>
             </div>
 
-            <div className="ui-quiet-surface mt-4 rounded-[18px] p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--ui-color-text-soft)]">Recent connection events</p>
-              <div className="mt-3 space-y-2">
+            <div className="mt-8 border-t border-gray-800 pt-4">
+              <p className="mb-2 font-bold uppercase tracking-wider text-gray-500">Recent connection events</p>
+              <div className="space-y-0">
                 {connectionMessages.length > 0 ? (
-                  connectionMessages.map((message, index) => (
-                    <div key={`${message.timestamp}-${index}`} className={`rounded-[12px] px-3 py-2 ${toneForMessage(message.type)}`}>
-                      <div className="whitespace-pre-wrap break-words text-xs leading-5">{message.text}</div>
+                  connectionMessages.map((message, index) => {
+                    let prefix = '';
+                    let colorClass = 'text-gray-300';
+                    switch (message.type) {
+                        case 'system': prefix = '[SYSTEM] '; colorClass = 'text-sky-300'; break;
+                        case 'error': prefix = '[ERROR] '; colorClass = 'text-red-400'; break;
+                        case 'sent': prefix = '> '; colorClass = 'text-green-400'; break;
+                    }
+                    return (
+                    <div key={`${message.timestamp}-${index}`} className={`whitespace-pre-wrap break-all text-xs leading-5 ${colorClass}`}>
+                      <span className="opacity-70">{prefix}</span>
+                      {message.text}
                     </div>
-                  ))
+                    );
+                  })
                 ) : (
-                  <p className="text-sm ui-panel-copy-quiet">No connection events yet.</p>
+                  <p className="text-xs text-gray-600">No connection events yet.</p>
                 )}
               </div>
             </div>

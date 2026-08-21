@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link as LinkIcon, RotateCcw, SendHorizontal, Terminal, Unlink } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { SerialMessage, useWebSerial } from '../../hooks/useWebSerial';
@@ -71,42 +71,36 @@ export default function ConsolePanel({
 
     return (
         <div
-            className="flex h-full w-full min-h-0 flex-col overflow-hidden"
-            style={{
-                background: 'linear-gradient(180deg, color-mix(in srgb, var(--ui-surface-quiet) 96%, black 4%) 0%, color-mix(in srgb, var(--ui-color-background) 92%, black 8%) 100%)',
-            }}
+            className="flex h-full w-full min-h-0 flex-col overflow-hidden bg-black font-mono text-gray-300"
         >
-            <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[color:var(--ui-border-soft)] px-4 py-2">
+            <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-800 px-4 py-1 text-xs">
                 <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.16em] text-[var(--ui-color-primary)]">
+                    <span className="inline-flex items-center gap-2 font-bold uppercase tracking-wider text-gray-400">
                         <Terminal size={14} />
-                        Terminal
+                        CMD
                     </span>
                     <Button
-                        variant="secondary"
-                        icon={isConnected ? <Unlink size={14} /> : <LinkIcon size={14} />}
+                        variant="ghost"
+                        icon={isConnected ? <Unlink size={12} /> : <LinkIcon size={12} />}
                         onClick={handleConnectClick}
-                        className={`min-h-9 rounded-[12px] px-3 py-2 text-xs ${
+                        className={`min-h-6 rounded-none px-2 py-1 text-[10px] ${
                             isConnected
-                                ? 'border-emerald-400/20 bg-emerald-400/12 text-emerald-100 hover:border-emerald-300/30 hover:bg-emerald-400/16'
-                                : 'ui-action-quiet'
+                                ? 'text-green-500 hover:bg-gray-900'
+                                : 'text-gray-400 hover:bg-gray-900'
                         }`}
                     >
-                        {isConnected ? 'Connected' : 'Connect'}
+                        {isConnected ? 'CONNECTED' : 'CONNECT'}
                     </Button>
-                    <span className="ui-pill-surface rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]">
-                        {visibleMessages.length} messages
-                    </span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <label className="ui-pill-surface inline-flex items-center gap-2 rounded-[12px] px-3 py-2 text-xs">
-                        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--ui-color-text-soft)]">Baud</span>
+                <div className="flex items-center gap-4">
+                    <label className="inline-flex items-center gap-2 text-[10px]">
+                        <span className="text-gray-500">BAUD</span>
                         <select
                             value={baudRate}
                             onChange={(e) => setBaudRate(Number(e.target.value))}
                             disabled={isConnected}
-                            className="bg-transparent text-[var(--ui-color-text)] outline-none disabled:opacity-50"
+                            className="bg-black text-gray-300 outline-none disabled:opacity-50"
                         >
                             <option value={9600}>9600</option>
                             <option value={19200}>19200</option>
@@ -118,48 +112,46 @@ export default function ConsolePanel({
                     <button
                         type="button"
                         onClick={clearMessages}
-                        className="ui-action-quiet inline-flex h-9 items-center justify-center rounded-[12px] px-3 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
+                        className="inline-flex items-center justify-center text-[10px] text-gray-500 transition-colors hover:text-gray-300"
                         title="Clear terminal"
                     >
-                        <RotateCcw size={14} className="mr-2" />
-                        Clear
+                        <RotateCcw size={12} className="mr-1" />
+                        CLS
                     </button>
                 </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 text-[var(--ui-color-text)]">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-2">
                 {visibleMessages.length === 0 ? (
-                    <div className="flex h-full min-h-[80px] items-center justify-center text-center">
-                        <div className="space-y-2">
-                            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--ui-color-text-soft)]">{emptyTitle}</p>
-                            <p className="text-xs text-[var(--ui-color-text-muted)]">{emptyBody}</p>
-                        </div>
+                    <div className="text-gray-600 text-xs">
+                        <p>C:\Users\User\Project&gt; {emptyTitle}</p>
+                        <p>{emptyBody}</p>
                     </div>
                 ) : (
-                    <div className="space-y-1.5">
+                    <div className="space-y-0 text-xs leading-5">
                         {visibleMessages.map((msg, index: number) => {
-                            let label = 'App';
-                            let toneClass = 'ui-elevated-surface text-[var(--ui-color-text-on-surface)]';
+                            let prefix = '';
+                            let colorClass = 'text-gray-300';
 
                             switch (msg.type) {
                                 case 'system':
-                                    label = 'System';
-                                    toneClass = 'border border-sky-400/18 bg-sky-400/10 text-sky-100';
+                                    prefix = '[SYSTEM] ';
+                                    colorClass = 'text-sky-300';
                                     break;
                                 case 'error':
-                                    label = 'Error';
-                                    toneClass = 'border border-rose-400/20 bg-rose-400/10 text-rose-100';
+                                    prefix = '[ERROR] ';
+                                    colorClass = 'text-red-400';
                                     break;
                                 case 'sent':
-                                    label = 'Sent';
-                                    toneClass = 'border border-emerald-400/20 bg-emerald-400/10 text-emerald-100';
+                                    prefix = '> ';
+                                    colorClass = 'text-green-400';
                                     break;
                             }
 
                             return (
-                                <div key={`${msg.timestamp}-${index}`} className={`rounded-[10px] px-3 py-2 ${toneClass}`}>
-                                    <div className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] opacity-80">{label}</div>
-                                    <div className="break-all whitespace-pre-wrap text-xs leading-5">{msg.text}</div>
+                                <div key={`${msg.timestamp}-${index}`} className={`whitespace-pre-wrap break-all ${colorClass}`}>
+                                    <span className="opacity-70">{prefix}</span>
+                                    {msg.text}
                                 </div>
                             );
                         })}
@@ -168,25 +160,20 @@ export default function ConsolePanel({
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="flex-shrink-0 border-t border-[color:var(--ui-border-soft)] px-3 py-2">
-                <div className="ui-input-surface flex items-center gap-2 rounded-[10px] px-3 py-1.5">
+            <div className="flex-shrink-0 px-4 py-2 text-xs">
+                <div className="flex items-center gap-2">
+                    <span className="text-gray-400">&gt;</span>
                     <input
                         type="text"
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={handleKeyDown}
                         disabled={!isConnected}
-                        className="flex-1 bg-transparent text-xs text-[var(--ui-color-text)] outline-none placeholder:text-[var(--ui-color-text-soft)] disabled:opacity-50"
-                        placeholder={isConnected ? 'Send a message to the board' : 'Connect a device to send messages'}
+                        className="flex-1 bg-transparent text-gray-200 outline-none placeholder:text-gray-600 disabled:opacity-50"
+                        placeholder={isConnected ? '...' : ''}
+                        autoComplete="off"
+                        spellCheck={false}
                     />
-                    <Button
-                        icon={<SendHorizontal size={13} />}
-                        onClick={handleSend}
-                        disabled={!isConnected || !inputValue.trim()}
-                        className="ui-terminal-send min-h-8 rounded-[8px] px-3 py-1.5 text-xs shadow-none"
-                    >
-                        Send
-                    </Button>
                 </div>
             </div>
         </div>

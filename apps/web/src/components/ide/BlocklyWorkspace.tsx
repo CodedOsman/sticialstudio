@@ -14,6 +14,8 @@ interface BlocklyWorkspaceProps {
   onSelectCategory?: (category: string) => void;
   sourceCode?: string;
   isCompact?: boolean;
+  bottomPanel?: React.ReactNode;
+  bottomCollapsed?: boolean;
 }
 
 export default function BlocklyWorkspace({
@@ -26,6 +28,8 @@ export default function BlocklyWorkspace({
   onSelectCategory,
   sourceCode,
   isCompact = false,
+  bottomPanel,
+  bottomCollapsed = false,
 }: BlocklyWorkspaceProps) {
   return (
     <section className="relative flex h-full w-full min-h-0 min-w-0 flex-1 overflow-hidden bg-[linear-gradient(180deg,#10131f_0%,#090c16_100%)]">
@@ -39,6 +43,8 @@ export default function BlocklyWorkspace({
         onSelectCategory={onSelectCategory}
         sourceCode={sourceCode}
         isCompactLayout={isCompact}
+        bottomPanel={bottomPanel}
+        bottomCollapsed={bottomCollapsed}
       />
     </section>
   );

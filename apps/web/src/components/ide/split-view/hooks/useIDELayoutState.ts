@@ -103,6 +103,8 @@ export function useIDELayoutState({ environment, isBlockMode, supportsDeviceFile
     const storedCollapsed = window.localStorage.getItem(BLOCK_TERMINAL_COLLAPSED_STORAGE_KEY);
     if (storedCollapsed === 'true' || storedCollapsed === 'false') {
       setBottomCollapsed(storedCollapsed === 'true');
+    } else {
+      setBottomCollapsed(false); // Auto show by default
     }
 
     const storedTab = window.localStorage.getItem(BLOCK_TERMINAL_TAB_STORAGE_KEY);

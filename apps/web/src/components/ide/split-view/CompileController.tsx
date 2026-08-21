@@ -62,12 +62,12 @@ export function useCompileFlow(webSerial: WebSerialController): CompileControlle
 
   const buildArduinoCompilePayload = useCallback(
     () => ({
-      board: currentBoard,
+      board: boardConfig?.fqbn || currentBoard,
       sourceCode,
       files: arduinoProjectFiles.length > 0 ? arduinoProjectFiles : undefined,
       entryFilePath: arduinoEntryFilePath ?? undefined,
     }),
-    [arduinoEntryFilePath, arduinoProjectFiles, currentBoard, sourceCode],
+    [arduinoEntryFilePath, arduinoProjectFiles, boardConfig?.fqbn, currentBoard, sourceCode],
   );
 
   const handleVerify = useCallback(async () => {
@@ -161,15 +161,40 @@ export function useCompileFlow(webSerial: WebSerialController): CompileControlle
     
     webSerial.addMessage('system', `Compiling ${arduinoCompileScopeLabel} for ${currentBoard} before upload...`);
 
+    let wasConnected = false;
     try {
+      if (webSerial.isConnected) {
+        wasConnected = true;
+        webSerial.addMessage('system', 'Disconnecting Web Serial to release port lock for upload...');
+        await webSerial.disconnect();
+        // Give the OS a moment to release the COM port lock
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+
       const { invoke } = await import('@tauri-apps/api/core');
       const payload = buildArduinoCompilePayload();
       
-      const result = await invoke<string>('upload_sketch', { payload, port: '' }).catch(err => {
-        throw new Error(err as string);
-      });
+      let result = '';
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          result = await invoke<string>('upload_sketch', { payload, port: '' });
+          break; // Success
+        } catch (err) {
+          const errorMsg = err as string;
+          if (errorMsg.includes('Access is denied') || errorMsg.includes('Access denied') || errorMsg.includes('unable to open port')) {
+            retries--;
+            if (retries === 0) {
+              throw new Error(errorMsg);
+            }
+            webSerial.addMessage('system', 'Waiting for OS to release port lock... retrying upload...');
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+          } else {
+            throw new Error(errorMsg);
+          }
+        }
+      }
 
-      
       webSerial.addMessage('system', 'Upload successful.');
       const lines = result.split('\n').filter((line) => line.trim().length > 0);
       lines.forEach((line) => webSerial.addMessage('app', line));
@@ -178,6 +203,10 @@ export function useCompileFlow(webSerial: WebSerialController): CompileControlle
       webSerial.addMessage('error', message);
     } finally {
       setIsCompiling(false);
+      if (wasConnected) {
+        webSerial.addMessage('system', 'Reconnecting to Serial Monitor...');
+        await webSerial.reconnect();
+      }
     }
   }, [
     arduinoCompileScopeLabel,

@@ -359,6 +359,17 @@ export default function TopToolbar({
               {isConnected ? <Link2Off size={14} /> : <Link2 size={14} />}
               {isConnected ? "Disconnect" : "Connect"}
             </button>
+            <div className="mx-1 h-4 w-px bg-white/10" />
+
+            <button
+              type="button"
+              onClick={onToggleBottom}
+              className="flex h-8 w-8 items-center justify-center rounded-[8px] text-slate-400 transition-all hover:bg-white/10 hover:text-white"
+              title={bottomCollapsed ? "Show terminal" : "Hide terminal"}
+            >
+              {bottomCollapsed ? <PanelBottomOpen size={14} /> : <PanelBottomClose size={14} />}
+            </button>
+            
             <button
               type="button"
               onClick={onOpenPreferences}

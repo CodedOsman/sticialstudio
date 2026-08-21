@@ -19,6 +19,7 @@ export interface SerialTransportController {
   pauseDecodedReadPipeline: () => Promise<void>;
   resumeDecodedReadPipeline: () => Promise<void>;
   reopenPort: (baudRate: number) => Promise<void>;
+  reconnect: (baudRate?: number) => Promise<void>;
 }
 
 interface UseSerialTransportOptions {
@@ -34,6 +35,7 @@ export function useSerialTransport({ addMessage }: UseSerialTransportOptions): S
   const baudRateRef = useRef(9600);
   const keepReadingRef = useRef(true);
   const pipeAbortControllerRef = useRef<AbortController | null>(null);
+  const pipePromiseRef = useRef<Promise<void> | null>(null);
   const chunkListenerRef = useRef<SerialChunkListener>(null);
 
   const readLoop = useCallback(async () => {
@@ -83,6 +85,11 @@ export function useSerialTransport({ addMessage }: UseSerialTransportOptions): S
       pipeAbortControllerRef.current = null;
     }
 
+    if (pipePromiseRef.current) {
+      await pipePromiseRef.current;
+      pipePromiseRef.current = null;
+    }
+
     textDecoderRef.current = null;
 
     if (writerRef.current) {
@@ -107,7 +114,7 @@ export function useSerialTransport({ addMessage }: UseSerialTransportOptions): S
     const abortController = new AbortController();
     pipeAbortControllerRef.current = abortController;
 
-    port.readable.pipeTo(textDecoder.writable, { signal: abortController.signal }).catch(() => undefined);
+    pipePromiseRef.current = port.readable.pipeTo(textDecoder.writable, { signal: abortController.signal }).catch(() => undefined);
     readerRef.current = textDecoder.readable.getReader();
     textDecoderRef.current = textDecoder;
 
@@ -150,6 +157,38 @@ export function useSerialTransport({ addMessage }: UseSerialTransportOptions): S
       } else {
         addMessage('error', `Connection failed: ${serialError.message}`);
       }
+    }
+  }, [addMessage, resumeDecodedReadPipeline]);
+
+  const reconnect = useCallback(async (baudRate?: number) => {
+    if (!('serial' in navigator)) {
+      return;
+    }
+
+    const rate = baudRate ?? baudRateRef.current;
+
+    try {
+      const ports = await navigator.serial.getPorts();
+      if (ports.length === 0) {
+        addMessage('error', 'No previously authorized ports found for auto-reconnect.');
+        return;
+      }
+
+      // Automatically pick the first authorized port
+      const port = ports[0];
+      await port.open({ baudRate: rate });
+
+      portRef.current = port;
+      baudRateRef.current = rate;
+      setIsConnected(true);
+
+      await resumeDecodedReadPipeline();
+
+      const info = port.getInfo();
+      addMessage('system', `Auto-reconnected to device (VID: ${info.usbVendorId}, PID: ${info.usbProductId}) at ${rate} baud`);
+    } catch (error) {
+      const serialError = error as Error;
+      addMessage('error', `Auto-reconnect failed: ${serialError.message}`);
     }
   }, [addMessage, resumeDecodedReadPipeline]);
 
@@ -231,6 +270,7 @@ export function useSerialTransport({ addMessage }: UseSerialTransportOptions): S
     keepReadingRef,
     pipeAbortControllerRef,
     connect,
+    reconnect,
     disconnect,
     writeText,
     writeBytes,

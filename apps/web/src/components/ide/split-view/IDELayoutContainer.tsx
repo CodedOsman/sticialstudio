@@ -366,14 +366,9 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
     </IdeBottomDock>
   );
 
-  const blockWorkspaceStage = (
-    <div className="min-h-0 min-w-0 flex-1">
-      <IDEErrorBoundary
-        zone="Blockly Editor"
-        title="The block editor hit a problem"
-        description="Blockly or the generated-code panel crashed. Reload this editor or reset its local state while keeping your project open."
-        onResetState={handleResetEditorZone}
-      >
+  const blockModeStage = (
+    <div className="relative flex min-h-0 min-w-0 flex-1">
+      <IDEErrorBoundary fallback={<div className="p-4 text-red-400">Block editor crashed</div>}>
         <BlocklyWorkspace
           generatorType={editor.currentGenerator || 'arduino'}
           initialXml={editor.blocklyXml}
@@ -384,17 +379,10 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
           onSelectCategory={editor.setSelectedBlocklyCategory}
           sourceCode={editor.sourceCode}
           isCompact={layout.isCompact}
+          bottomPanel={blockBottomStage}
+          bottomCollapsed={layout.bottomCollapsed}
         />
       </IDEErrorBoundary>
-    </div>
-  );
-
-  const blockModeStage = (
-    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-      {blockWorkspaceStage}
-      <div className="absolute bottom-0 left-0 right-0 z-50">
-        {blockBottomStage}
-      </div>
     </div>
   );
 
