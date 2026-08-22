@@ -164,22 +164,22 @@ export default function WorkspaceSidebar({
       <div className='space-y-4 border-b border-white/8 pb-4'>
         <div className='flex items-start justify-between gap-3'>
           <div className='min-w-0'>
-            <p className='text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500'>Blocks</p>
-            <h3 className='mt-2 text-[1.25rem] font-bold tracking-[-0.04em] text-white'>Choose one family</h3>
-            <p className='mt-2 text-sm leading-6 text-slate-400'>Pick a category, then drag blocks into the stage.</p>
+            <p className='text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--ui-color-text)]'>Blocks</p>
+            <h3 className='mt-2 text-[1.25rem] font-bold tracking-[-0.04em] text-[color:var(--ui-color-text)]'>Choose one family</h3>
+            <p className='mt-2 text-sm leading-6 text-[color:var(--ui-color-text)]'>Pick a category, then drag blocks into the stage.</p>
           </div>
-          <div className='rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300'>
+          <div className='rounded-full border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ui-color-text)]'>
             {filteredCategories.length}
           </div>
         </div>
 
-        <label className='flex h-11 items-center gap-3 rounded-[18px] border border-white/10 bg-white/[0.04] px-3 text-slate-400 transition-colors focus-within:border-white/16 focus-within:text-white'>
+        <label className='flex h-11 items-center gap-3 rounded-[18px] border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-3 text-[color:var(--ui-color-text)] transition-colors focus-within:border-[color:var(--ui-border-strong)] focus-within:text-[color:var(--ui-color-text)]'>
           <Search size={15} />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder='Search block families'
-            className='w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500'
+            className='w-full bg-transparent text-sm text-[color:var(--ui-color-text)] outline-none placeholder:text-[color:var(--ui-color-text)]'
           />
         </label>
       </div>
@@ -199,25 +199,25 @@ export default function WorkspaceSidebar({
                 className={`group flex w-full items-start gap-3 rounded-[22px] border px-4 py-4 text-left transition-all duration-150 ${
                   isActive
                     ? 'border-indigo-300/24 bg-white/[0.08] shadow-[0_20px_40px_-28px_rgba(101,108,248,0.55)]'
-                    : 'border-white/8 bg-white/[0.03] hover:-translate-y-0.5 hover:border-white/12 hover:bg-white/[0.06]'
+                    : 'border-white/8 bg-[color:var(--ui-color-surface)] hover:-translate-y-0.5 hover:border-white/12 hover:bg-white/[0.06]'
                 }`}
               >
                 <span
-                  className='mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px] text-white shadow-[0_18px_36px_-24px_rgba(15,23,42,0.5)]'
+                  className='mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px] text-[color:var(--ui-color-text)] shadow-[0_18px_36px_-24px_rgba(15,23,42,0.5)]'
                   style={{ backgroundColor: category.color }}
                 >
                   {category.icon}
                 </span>
                 <span className='min-w-0 flex-1'>
                   <span className='flex items-center gap-2'>
-                    <span className='block text-sm font-semibold text-white'>{category.label}</span>
+                    <span className='block text-sm font-semibold text-[color:var(--ui-color-text)]'>{category.label}</span>
                     {isActive ? (
                       <span className='rounded-full border border-indigo-300/24 bg-indigo-300/12 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-200'>
                         Active
                       </span>
                     ) : null}
                   </span>
-                  <span className='mt-1 block text-sm leading-6 text-slate-400'>{category.description}</span>
+                  <span className='mt-1 block text-sm leading-6 text-[color:var(--ui-color-text)]'>{category.description}</span>
                 </span>
               </button>
             );
@@ -225,16 +225,16 @@ export default function WorkspaceSidebar({
         </div>
 
         {filteredCategories.length === 0 ? (
-          <div className='mt-4 rounded-[22px] border border-dashed border-white/10 bg-white/[0.03] px-4 py-5 text-sm text-slate-400'>
+          <div className='mt-4 rounded-[22px] border border-dashed border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-4 py-5 text-sm text-[color:var(--ui-color-text)]'>
             No block families match &quot;{query}&quot;.
           </div>
         ) : null}
       </div>
 
       <div className='border-t border-white/8 pt-4'>
-        <div className='rounded-[20px] border border-white/10 bg-white/[0.04] px-4 py-4'>
-          <p className='text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500'>Selected</p>
-          <p className='mt-2 text-base font-semibold text-white'>{selectedBlocklyCategory}</p>
+        <div className='rounded-[20px] border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-4 py-4'>
+          <p className='text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--ui-color-text)]'>Selected</p>
+          <p className='mt-2 text-base font-semibold text-[color:var(--ui-color-text)]'>{selectedBlocklyCategory}</p>
         </div>
       </div>
     </section>

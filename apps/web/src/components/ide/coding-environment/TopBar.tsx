@@ -70,12 +70,12 @@ export default function CodingEnvironmentTopBar({
       ? 'border-emerald-400/20 bg-emerald-400/12 text-emerald-200'
       : saveStatusTone === 'error'
         ? 'border-rose-400/24 bg-rose-400/12 text-rose-100'
-        : 'border-white/10 bg-white/[0.04] text-slate-300';
+        : 'border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] text-[color:var(--ui-color-text-soft)]';
 
   if (activeMode === 'block') {
     return (
       <motion.header
-        className='overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,#15121f_0%,#111019_100%)] shadow-[0_24px_64px_-44px_rgba(0,0,0,1)]'
+        className='overflow-hidden rounded-[24px] border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] shadow-[0_24px_64px_-44px_rgba(0,0,0,1)]'
         variants={fadeInUp}
         initial='hidden'
         animate='visible'
@@ -83,7 +83,7 @@ export default function CodingEnvironmentTopBar({
         <div className='flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5'>
           <div className='flex min-w-0 flex-col gap-3'>
             <div className='flex min-w-0 flex-wrap items-center gap-2'>
-              <div className='inline-flex items-center gap-1 rounded-[16px] border border-white/10 bg-white/[0.04] p-1.5'>
+              <div className='inline-flex items-center gap-1 rounded-[16px] border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] p-1.5'>
                 <button
                   type='button'
                   onClick={() => onChangeCodingMode('block')}
@@ -95,25 +95,25 @@ export default function CodingEnvironmentTopBar({
                 <button
                   type='button'
                   onClick={() => onChangeCodingMode('text')}
-                  className='inline-flex items-center gap-2 rounded-[12px] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-300 transition-all hover:bg-white/[0.06] hover:text-white'
+                  className='inline-flex items-center gap-2 rounded-[12px] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--ui-color-text-soft)] transition-all hover:bg-[color:var(--ui-border-soft)] hover:text-[color:var(--ui-color-text)]'
                 >
                   <Code2 size={14} />
                   Text
                 </button>
               </div>
-              <span className='rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300'>
+              <span className='rounded-full border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ui-color-text-soft)]'>
                 {boardName}
               </span>
               {saveStatusText ? <span className={`rounded-full border px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] ${saveStatusClass}`}>{saveStatusText}</span> : null}
             </div>
             <div className='flex flex-wrap items-center gap-2'>
-              <span className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${componentCount > 0 ? 'border-emerald-300/24 bg-emerald-400/12 text-emerald-100' : 'border-white/10 bg-white/[0.04] text-slate-400'}`}>
+              <span className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${componentCount > 0 ? 'border-emerald-300/24 bg-emerald-400/12 text-emerald-100' : 'border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] text-[color:var(--ui-color-text-soft)]'}`}>
                 1 Build
               </span>
               <span className='rounded-full border border-violet-300/24 bg-violet-400/14 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-100'>
                 2 Code
               </span>
-              <span className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${canUploadAndSimulate || isSimulationActive ? 'border-cyan-300/24 bg-cyan-400/12 text-cyan-100' : 'border-white/10 bg-white/[0.04] text-slate-400'}`}>
+              <span className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${canUploadAndSimulate || isSimulationActive ? 'border-cyan-300/24 bg-cyan-400/12 text-cyan-100' : 'border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] text-[color:var(--ui-color-text-soft)]'}`}>
                 3 Run
               </span>
             </div>
@@ -124,7 +124,7 @@ export default function CodingEnvironmentTopBar({
               variant='secondary'
               icon={<ArrowLeft size={16} />}
               onClick={onBackToCircuitLab}
-              className='min-h-11 rounded-[16px] border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white hover:border-white/16 hover:bg-white/[0.08] hover:text-white'
+              className='min-h-11 rounded-[16px] border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-4 py-2 text-sm text-[color:var(--ui-color-text-soft)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-border-soft)] hover:text-[color:var(--ui-color-text)]'
             >
               Back to Circuit
             </Button>
@@ -133,7 +133,7 @@ export default function CodingEnvironmentTopBar({
               icon={<Save size={16} />}
               onClick={onSaveProject}
               disabled={isSaving}
-              className='min-h-11 rounded-[16px] border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white hover:border-white/16 hover:bg-white/[0.08] hover:text-white'
+              className='min-h-11 rounded-[16px] border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-4 py-2 text-sm text-[color:var(--ui-color-text-soft)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-border-soft)] hover:text-[color:var(--ui-color-text)]'
             >
               {isSaving ? 'Saving...' : 'Save'}
             </Button>
@@ -141,7 +141,7 @@ export default function CodingEnvironmentTopBar({
               variant='secondary'
               icon={<Plus size={16} />} 
               onClick={onNewSketch}
-              className='min-h-11 rounded-[16px] border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white hover:border-white/16 hover:bg-white/[0.08] hover:text-white'
+              className='min-h-11 rounded-[16px] border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-4 py-2 text-sm text-[color:var(--ui-color-text-soft)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-border-soft)] hover:text-[color:var(--ui-color-text)]'
             >
               New Sketch
             </Button>
@@ -150,7 +150,7 @@ export default function CodingEnvironmentTopBar({
               icon={<RotateCcw size={16} />}
               onClick={onResetSimulation}
               disabled={!canResetSimulation}
-              className='min-h-11 rounded-[16px] border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white hover:border-white/16 hover:bg-white/[0.08] hover:text-white'
+              className='min-h-11 rounded-[16px] border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-4 py-2 text-sm text-[color:var(--ui-color-text-soft)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-border-soft)] hover:text-[color:var(--ui-color-text)]'
             >
               Reset
             </Button>
@@ -158,7 +158,7 @@ export default function CodingEnvironmentTopBar({
               variant='secondary'
               icon={<Settings2 size={16} />}
               onClick={onOpenPreferences}
-              className='min-h-11 rounded-[16px] border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white hover:border-white/16 hover:bg-white/[0.08] hover:text-white'
+              className='min-h-11 rounded-[16px] border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-4 py-2 text-sm text-[color:var(--ui-color-text-soft)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-border-soft)] hover:text-[color:var(--ui-color-text)]'
             >
               Preferences
             </Button>
@@ -192,7 +192,7 @@ export default function CodingEnvironmentTopBar({
 
   return (
     <motion.header
-      className='flex-shrink-0 overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,#15121f_0%,#111019_100%)] shadow-[0_24px_64px_-44px_rgba(0,0,0,1)]'
+      className='flex-shrink-0 overflow-hidden rounded-[24px] border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] shadow-[0_24px_64px_-44px_rgba(0,0,0,1)]'
       variants={fadeInUp}
       initial='hidden'
       animate='visible'
@@ -237,11 +237,11 @@ export default function CodingEnvironmentTopBar({
           ) : null}
 
           {/* Block / Text mode switcher */}
-          <div className='inline-flex items-center gap-1 rounded-[10px] border border-white/10 bg-[#0d1320]/80 p-0.5 shadow-inner backdrop-blur-md'>
+          <div className='inline-flex items-center gap-1 rounded-[10px] border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)]/80 p-0.5 shadow-inner backdrop-blur-md'>
             <button
               type='button'
               onClick={() => onChangeCodingMode('block')}
-              className='relative flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 transition-all hover:bg-white/[0.04] hover:text-white'
+              className='relative flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[color:var(--ui-color-text-soft)] transition-all hover:bg-[color:var(--ui-border-soft)] hover:text-[color:var(--ui-color-text)]'
             >
               <Blocks size={11} className='text-indigo-400' />
               Blocks
@@ -280,7 +280,7 @@ export default function CodingEnvironmentTopBar({
             variant='secondary'
             icon={<ArrowLeft size={14} />}
             onClick={onBackToCircuitLab}
-            className='min-h-9 rounded-[12px] border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white hover:border-white/16 hover:bg-white/[0.08] hover:text-white'
+            className='min-h-9 rounded-[12px] border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-3 py-2 text-xs text-[color:var(--ui-color-text-soft)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-border-soft)] hover:text-[color:var(--ui-color-text)]'
           >
             Circuit
           </Button>
@@ -289,7 +289,7 @@ export default function CodingEnvironmentTopBar({
             icon={<Save size={14} />}
             onClick={onSaveProject}
             disabled={isSaving}
-            className='min-h-9 rounded-[12px] border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white hover:border-white/16 hover:bg-white/[0.08] hover:text-white'
+            className='min-h-9 rounded-[12px] border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-3 py-2 text-xs text-[color:var(--ui-color-text-soft)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-border-soft)] hover:text-[color:var(--ui-color-text)]'
           >
             {isSaving ? 'Saving…' : 'Save'}
           </Button>
@@ -297,7 +297,7 @@ export default function CodingEnvironmentTopBar({
             variant='secondary'
             icon={<Plus size={14} />} 
             onClick={onNewSketch}
-            className='min-h-9 rounded-[12px] border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white hover:border-white/16 hover:bg-white/[0.08] hover:text-white'
+            className='min-h-9 rounded-[12px] border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-3 py-2 text-xs text-[color:var(--ui-color-text-soft)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-border-soft)] hover:text-[color:var(--ui-color-text)]'
           >
             New Sketch
           </Button>
@@ -327,11 +327,11 @@ export default function CodingEnvironmentTopBar({
             variant='secondary'
             icon={<Settings2 size={14} />}
             onClick={onOpenPreferences}
-            className='min-h-9 rounded-[12px] border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white hover:border-white/16 hover:bg-white/[0.08] hover:text-white'
+            className='min-h-9 rounded-[12px] border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-3 py-2 text-xs text-[color:var(--ui-color-text-soft)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-border-soft)] hover:text-[color:var(--ui-color-text)]'
           >
             Preferences
           </Button>
-          <ThemeToggle className='h-9 rounded-[12px] border-white/10 bg-white/[0.04] px-2.5 text-white hover:border-white/16 hover:bg-white/[0.08]' />
+          <ThemeToggle className='h-9 rounded-[12px] border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-2.5 text-[color:var(--ui-color-text-soft)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-border-soft)]' />
         </div>
       </div>
     </motion.header>

@@ -1299,7 +1299,7 @@ export default function BlockEditor({
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--blockly-sidebar-kicker)]">Step 2: Code</p>
               <div className="mt-1 flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-violet-300/24 bg-white/[0.08] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white">
+                <span className="rounded-full border border-[color:var(--ui-border-strong)] bg-[color:var(--ui-color-surface)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ui-color-text)] shadow-sm">
                   {activeCategory.label}
                 </span>
                 <span className="hidden text-xs text-violet-100/60 md:inline">Build, code, then run.</span>
@@ -1307,18 +1307,18 @@ export default function BlockEditor({
             </div>
 
             <div className="flex w-full flex-wrap items-center justify-end gap-2 lg:w-auto lg:flex-nowrap">
-              <span className="hidden rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-violet-50/78 sm:inline-flex">
+              <span className="hidden rounded-full border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ui-color-text-soft)] shadow-sm sm:inline-flex">
                 {blockCount} blocks
               </span>
-              <button type="button" onClick={handleFitWorkspace} className="inline-flex h-10 items-center gap-2 rounded-[14px] border border-white/10 bg-white/[0.05] px-3 text-xs font-semibold text-violet-50/90 transition-all hover:-translate-y-0.5 hover:border-violet-300/35 hover:bg-white/[0.08] hover:text-white">
+              <button type="button" onClick={handleFitWorkspace} className="inline-flex h-10 items-center gap-2 rounded-[14px] border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-3 text-xs font-semibold text-[color:var(--ui-color-text-soft)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-[color:var(--ui-border-strong)] hover:text-[color:var(--ui-color-text)]">
                 <Crosshair size={14} />
                 <span className="hidden sm:inline">Fit</span>
               </button>
-              <button type="button" onClick={handleCenterWorkspace} className="inline-flex h-10 items-center gap-2 rounded-[14px] border border-white/10 bg-white/[0.05] px-3 text-xs font-semibold text-violet-50/90 transition-all hover:-translate-y-0.5 hover:border-violet-300/35 hover:bg-white/[0.08] hover:text-white">
+              <button type="button" onClick={handleCenterWorkspace} className="inline-flex h-10 items-center gap-2 rounded-[14px] border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-3 text-xs font-semibold text-[color:var(--ui-color-text-soft)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-[color:var(--ui-border-strong)] hover:text-[color:var(--ui-color-text)]">
                 <Move size={14} />
                 <span className="hidden sm:inline">Center</span>
               </button>
-              <button type="button" onClick={handleCleanWorkspace} className="inline-flex h-10 items-center gap-2 rounded-[14px] border border-white/10 bg-white/[0.05] px-3 text-xs font-semibold text-violet-50/90 transition-all hover:-translate-y-0.5 hover:border-violet-300/35 hover:bg-white/[0.08] hover:text-white">
+              <button type="button" onClick={handleCleanWorkspace} className="inline-flex h-10 items-center gap-2 rounded-[14px] border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-3 text-xs font-semibold text-[color:var(--ui-color-text-soft)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-[color:var(--ui-border-strong)] hover:text-[color:var(--ui-color-text)]">
                 <Wand2 size={14} />
                 <span className="hidden sm:inline">Arrange</span>
               </button>
@@ -1327,7 +1327,7 @@ export default function BlockEditor({
                 type="button"
                 onClick={() => setShowCodePanel((v) => !v)}
                 title={showCodePanel ? 'Hide code preview' : 'Show code preview'}
-                className="inline-flex h-10 items-center gap-2 rounded-[14px] border border-white/10 bg-white/[0.05] px-3 text-xs font-semibold text-violet-50/90 transition-all hover:-translate-y-0.5 hover:border-violet-300/35 hover:bg-white/[0.08] hover:text-white"
+                className="inline-flex h-10 items-center gap-2 rounded-[14px] border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-3 text-xs font-semibold text-[color:var(--ui-color-text-soft)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-[color:var(--ui-border-strong)] hover:text-[color:var(--ui-color-text)]"
               >
                 <Code2 size={14} />
                 <span className="hidden sm:inline">{showCodePanel ? 'Hide Code' : 'Show Code'}</span>
@@ -1353,7 +1353,7 @@ export default function BlockEditor({
                 onPointerDown={handleCodePanelResizeStart}
                 className="group relative w-3 shrink-0 cursor-col-resize touch-none bg-transparent"
               >
-                <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-white/8 transition-colors group-hover:bg-violet-300/45" />
+                <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[color:var(--ui-border-soft)] transition-colors group-hover:bg-[color:var(--ui-color-primary)]" />
                 <div
                   className={`absolute inset-y-0 left-1/2 w-[3px] -translate-x-1/2 rounded-full transition-colors ${isCodePanelResizing ? 'bg-violet-300/60' : 'bg-transparent'}`}
                 />

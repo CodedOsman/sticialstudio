@@ -43,7 +43,7 @@ export default function OnboardingShell({
             <span className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[color:var(--ui-color-primary)]/10 border border-[color:var(--ui-color-primary)]/20 shadow-lg">
               <Sparkles size={18} className="text-[color:var(--ui-color-primary)]" />
             </span>
-            <span className="text-base font-bold tracking-tight text-[color:var(--ui-color-text)]">Sticial Studio</span>
+            <span className="text-base font-bold tracking-tight text-[color:var(--ui-color-text)]">STEMAIDE IDE</span>
           </Link>
 
           <div className="flex items-center gap-3">

@@ -368,7 +368,7 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
 
   const blockModeStage = (
     <div className="relative flex min-h-0 min-w-0 flex-1">
-      <IDEErrorBoundary fallback={<div className="p-4 text-red-400">Block editor crashed</div>}>
+      <IDEErrorBoundary zone="blockly-workspace" title="Block editor crashed">
         <BlocklyWorkspace
           generatorType={editor.currentGenerator || 'arduino'}
           initialXml={editor.blocklyXml}

@@ -15,7 +15,7 @@ const editorMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'Sticial Studio',
+  title: 'STEMAIDE IDE',
   description: 'Educational block and text coding platform for hardware projects',
 };
 

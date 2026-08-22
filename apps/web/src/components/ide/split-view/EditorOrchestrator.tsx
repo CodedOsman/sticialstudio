@@ -118,6 +118,16 @@ export function useBlocklySync(): EditorOrchestratorValue {
     }
   }, [boardConfig, currentGenerator, currentLanguage, setGenerator, setLanguage]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
+      import('@tauri-apps/api/core').then(({ invoke }) => {
+        invoke('setup_arduino_cli')
+          .then(() => console.log('[Tauri] Arduino CLI setup complete'))
+          .catch(err => console.error('[Tauri] Failed to setup Arduino CLI:', err));
+      }).catch(() => {});
+    }
+  }, []);
+
   const blocklyFile = useMemo(
     () =>
       files.find((file) => file.name === 'main.blockly') ||

@@ -108,8 +108,8 @@ export function useCompileFlow(webSerial: WebSerialController): CompileControlle
   }, [arduinoCompileScopeLabel, buildArduinoCompilePayload, compileStrategy, currentBoard, openBlockTerminalTab, reportUnsupportedBoardAction, supportsDeviceFiles, webSerial]);
 
   const syncMicroPythonProjectToDevice = useCallback(async () => {
-    if (micropythonProjectFiles.length === 0) {
-      throw new Error('No MicroPython files found in this project.');
+    if (micropythonProjectFiles.length === 0 && !sourceCode.trim()) {
+      throw new Error('No MicroPython code or files found to run.');
     }
 
     if (micropythonProjectDirectories.length > 0) {
@@ -124,9 +124,12 @@ export function useCompileFlow(webSerial: WebSerialController): CompileControlle
       webSerial.addMessage('system', `Synced ${file.path}`);
     }
 
-    webSerial.addMessage('system', 'Files saved to the MicroPython device.');
+    if (micropythonProjectFiles.length > 0) {
+      webSerial.addMessage('system', 'Files saved to the MicroPython device.');
+    }
+
     if (sourceCode.trim()) {
-      webSerial.addMessage('system', 'Running main.py from the synced project...');
+      webSerial.addMessage('system', 'Running code on device...');
       await webSerial.executeMicroPythonRaw(sourceCode);
     }
   }, [micropythonProjectDirectories, micropythonProjectFiles, sourceCode, webSerial]);
@@ -146,7 +149,7 @@ export function useCompileFlow(webSerial: WebSerialController): CompileControlle
 
     if (supportsDeviceFiles) {
       setIsCompiling(true);
-      webSerial.addMessage('system', `Syncing ${micropythonProjectFiles.length} MicroPython file(s) to ${currentBoard}...`);
+      webSerial.addMessage('system', `Deploying MicroPython code to ${currentBoard}...`);
       try {
         await syncMicroPythonProjectToDevice();
       } catch (error) {

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import * as React from "react";
 import { motion } from "framer-motion";
@@ -27,7 +27,7 @@ export default function WorkspaceStageRail({ items, className, variant = "defaul
       className={cn(
         dark
           ? "inline-flex flex-wrap items-center gap-2 rounded-[18px] border border-white/10 bg-white/[0.03] p-1.5 shadow-[0_14px_34px_-28px_rgba(0,0,0,0.55)]"
-          : "inline-flex flex-wrap items-center gap-2 rounded-[18px] border border-[color:var(--ui-border-soft)] bg-white/70 p-1.5 shadow-[0_14px_30px_-24px_rgba(26,41,72,0.16)]",
+          : "inline-flex flex-wrap items-center gap-2 rounded-[18px] border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] p-1.5 shadow-[0_14px_30px_-24px_rgba(26,41,72,0.16)]",
         className
       )}
       variants={fadeInUp}
@@ -47,8 +47,8 @@ export default function WorkspaceStageRail({ items, className, variant = "defaul
             : item.active
               ? "bg-[var(--ui-color-primary)] text-white shadow-[var(--ui-shadow-button)]"
               : item.subtle
-                ? "border border-[color:var(--ui-border-soft)] bg-white/55 text-[var(--ui-color-text-soft)]"
-                : "text-[var(--ui-color-text-muted)] hover:bg-white/75 hover:text-[var(--ui-color-text)]",
+                ? "border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] text-[var(--ui-color-text-soft)]"
+                : "text-[var(--ui-color-text-muted)] hover:bg-[color:var(--ui-color-surface)] hover:text-[var(--ui-color-text)]",
           interactive && "cursor-pointer"
         );
 

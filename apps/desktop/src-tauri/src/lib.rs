@@ -116,11 +116,28 @@ async fn upload_sketch(app: tauri::AppHandle, payload: CompilePayload, mut port:
     }
 }
 
+#[tauri::command]
+async fn setup_arduino_cli(app: tauri::AppHandle) -> Result<String, String> {
+    let update_cmd = app.shell().sidecar("arduino-cli").map_err(|e| e.to_string())?
+        .args(["core", "update-index"]);
+    update_cmd.output().await.map_err(|e| e.to_string())?;
+
+    let install_cmd = app.shell().sidecar("arduino-cli").map_err(|e| e.to_string())?
+        .args(["core", "install", "arduino:avr"]);
+    let output = install_cmd.output().await.map_err(|e| e.to_string())?;
+
+    if output.status.success() {
+        Ok("Setup complete".to_string())
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_shell::init())
-    .invoke_handler(tauri::generate_handler![compile_sketch, upload_sketch])
+    .invoke_handler(tauri::generate_handler![compile_sketch, upload_sketch, setup_arduino_cli])
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(

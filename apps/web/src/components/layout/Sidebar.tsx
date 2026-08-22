@@ -16,7 +16,7 @@ export default function Sidebar() {
     return (
         <aside className="flex h-full w-64 shrink-0 flex-col border-r border-panel-border bg-panel backdrop-blur-xl transition-colors">
             <div className="border-b border-panel-border px-5 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Sticial Studio</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">STEMAIDE IDE</p>
                 <h2 className="mt-1 text-lg font-bold tracking-tight text-foreground">Learning Workspace</h2>
             </div>
 
