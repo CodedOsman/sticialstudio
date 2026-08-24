@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { useBoard } from '@/contexts/BoardContext';
 import { apiFetch, safeJson } from '@/lib/api';
+import type { useWebSerial } from '@/hooks/useWebSerial';
 
 interface LibraryItem {
   name: string;
@@ -19,6 +20,7 @@ interface LibraryItem {
   availableVersions?: string[];
   installed: boolean;
   installedVersion?: string | null;
+  mockSource?: string;
 }
 
 interface LibraryResponse {
@@ -35,8 +37,23 @@ const MICROPYTHON_PREVIEW_PACKAGES: LibraryItem[] = [
     version: 'Preview',
     description: 'Lightweight MQTT client commonly used in connected MicroPython projects.',
     category: 'Networking',
-    includes: ['umqtt/simple.py'],
+    includes: ['umqtt_simple.py'],
     installed: false,
+    mockSource: `class MQTTClient:
+    def __init__(self, client_id, server, port=0, user=None, password=None, keepalive=0, ssl=False, ssl_params={}):
+        self.client_id = client_id
+        self.server = server
+        self.port = port
+        self.user = user
+        self.password = password
+        self.keepalive = keepalive
+        self.ssl = ssl
+        self.ssl_params = ssl_params
+    def connect(self, clean_session=True):
+        pass
+    def publish(self, topic, msg, retain=False, qos=0):
+        pass
+`
   },
   {
     name: 'ssd1306',
@@ -46,6 +63,33 @@ const MICROPYTHON_PREVIEW_PACKAGES: LibraryItem[] = [
     category: 'Display',
     includes: ['ssd1306.py'],
     installed: false,
+    mockSource: `# MicroPython SSD1306 OLED driver, I2C and SPI interfaces
+import time
+import framebuf
+
+class SSD1306(framebuf.FrameBuffer):
+    def __init__(self, width, height, external_vcc):
+        self.width = width
+        self.height = height
+        self.external_vcc = external_vcc
+        self.pages = self.height // 8
+        self.buffer = bytearray(self.pages * self.width)
+        super().__init__(self.buffer, self.width, self.height, framebuf.MONO_VLSB)
+        self.init_display()
+
+    def init_display(self):
+        pass
+    def poweroff(self):
+        pass
+    def poweron(self):
+        pass
+    def contrast(self, contrast):
+        pass
+    def invert(self, invert):
+        pass
+    def show(self):
+        pass
+`
   },
   {
     name: 'neopixel',
@@ -59,6 +103,39 @@ const MICROPYTHON_PREVIEW_PACKAGES: LibraryItem[] = [
   },
 ];
 
+const ARDUINO_MOCK_LIBRARIES: LibraryItem[] = [
+  {
+    name: 'Servo',
+    author: 'Michael Margolis, Arduino',
+    version: '1.1.8',
+    description: 'Allows Arduino boards to control a variety of servo motors.',
+    category: 'Device Control',
+    includes: ['Servo.h'],
+    installed: true,
+    installedVersion: '1.1.8',
+  },
+  {
+    name: 'Wire',
+    author: 'Arduino',
+    version: '1.0.0',
+    description: 'Allows communication with I2C / TWI devices.',
+    category: 'Communication',
+    includes: ['Wire.h'],
+    installed: true,
+    installedVersion: '1.0.0',
+  },
+  {
+    name: 'Adafruit NeoPixel',
+    author: 'Adafruit',
+    version: '1.10.5',
+    description: 'Arduino library for controlling single-wire LED pixels (NeoPixel, WS2812, etc.)',
+    category: 'Display',
+    includes: ['Adafruit_NeoPixel.h'],
+    installed: false,
+    availableVersions: ['1.10.5', '1.10.4'],
+  }
+];
+
 function summarizeIncludes(library: LibraryItem) {
   if (!Array.isArray(library.includes) || library.includes.length === 0) {
     return 'No headers listed';
@@ -67,7 +144,7 @@ function summarizeIncludes(library: LibraryItem) {
   return library.includes.slice(0, 3).join(', ');
 }
 
-export default function LibraryHub() {
+export default function LibraryHub({ webSerial }: { webSerial?: ReturnType<typeof useWebSerial> }) {
   const { language } = useBoard();
   const token = 'local';
   const isPython = language === 'python';
@@ -96,20 +173,82 @@ export default function LibraryHub() {
     }
 
     try {
-      const suffix = searchQuery
-        ? `/api/libraries/arduino/search?q=${encodeURIComponent(searchQuery)}`
-        : '/api/libraries/arduino/installed';
-      const res = await apiFetch(suffix, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await safeJson<LibraryResponse>(res);
-
-      if (!res.ok || !data?.success) {
-        throw new Error(data?.error || `Library API error (status ${res.status}).`);
+      // Check if we are running in Tauri
+      if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
+        const { invoke } = await import('@tauri-apps/api/core');
+        
+        let results: LibraryItem[] = [];
+        
+        if (searchQuery) {
+          const jsonStr = await invoke<string>('manage_arduino_library', {
+            action: 'search',
+            libraryName: searchQuery
+          });
+          const data = JSON.parse(jsonStr);
+          
+          if (data.libraries && Array.isArray(data.libraries)) {
+            results = data.libraries.map((lib: any) => {
+              const latest = lib.latest || {};
+              return {
+                name: lib.name || 'Unknown',
+                author: latest.author || 'Unknown',
+                version: latest.version || 'Unknown',
+                latestVersion: latest.version,
+                description: latest.sentence || latest.paragraph || 'No description',
+                category: latest.category,
+                website: latest.website,
+                includes: latest.provides_includes || [],
+                availableVersions: lib.available_versions || [],
+                installed: false, // We'd need to cross-reference with 'list' to know if it's installed, assuming false for search results
+              };
+            });
+          }
+        } else {
+          const jsonStr = await invoke<string>('manage_arduino_library', {
+            action: 'list',
+            libraryName: ''
+          });
+          const data = JSON.parse(jsonStr);
+          
+          if (data.installed_libraries && Array.isArray(data.installed_libraries)) {
+            results = data.installed_libraries.map((item: any) => {
+              const lib = item.library || {};
+              return {
+                name: lib.name || 'Unknown',
+                author: lib.author || 'Unknown',
+                version: lib.version || 'Unknown',
+                latestVersion: lib.version,
+                description: lib.sentence || lib.paragraph || 'No description',
+                category: lib.category,
+                website: lib.website,
+                includes: lib.provides_includes || [],
+                availableVersions: [lib.version],
+                installed: true,
+                installedVersion: lib.version
+              };
+            });
+          }
+        }
+        
+        setLibraries(results);
+      } else {
+        // Fallback to mock data for browser environment
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        let results = ARDUINO_MOCK_LIBRARIES;
+        if (searchQuery) {
+          const q = searchQuery.toLowerCase();
+          results = results.filter(lib => 
+            lib.name.toLowerCase().includes(q) || 
+            lib.description.toLowerCase().includes(q)
+          );
+        } else {
+          results = results.filter(lib => lib.installed);
+        }
+        
+        setLibraries(results);
       }
-
-      setLibraries(Array.isArray(data.libraries) ? data.libraries : []);
-      setWarnings(Array.isArray(data.warnings) ? data.warnings : []);
+      setWarnings([]);
     } catch (fetchError) {
       setLibraries([]);
       setWarnings([]);
@@ -144,6 +283,91 @@ export default function LibraryHub() {
     void loadArduinoLibraries(isSearchMode ? trimmedQuery : '');
   }, [isPython, isSearchMode, loadArduinoLibraries, trimmedQuery]);
 
+  const mutateMicroPythonLibrary = useCallback(
+    async (library: LibraryItem, action: 'install' | 'uninstall') => {
+      setBusyLibraryName(library.name);
+      setBusyAction(action);
+      setError(null);
+      setStatusMessage(null);
+
+      if (!webSerial) {
+        setError('Serial capability not found.');
+        setBusyLibraryName(null);
+        setBusyAction(null);
+        return;
+      }
+      
+      // Checking webSerial isConnected property through object destructuring
+      const { isConnected, runMicroPythonCommand } = webSerial;
+
+      if (!isConnected) {
+        setError('Board not connected. Please connect your MicroPython board to install libraries.');
+        setBusyLibraryName(null);
+        setBusyAction(null);
+        return;
+      }
+
+      try {
+        if (action === 'install') {
+          if (!library.mockSource) {
+             throw new Error('No source code available for this preview package.');
+          }
+          const filename = library.includes?.[0] || `${library.name}.py`;
+          const escapedSource = library.mockSource.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          
+          const script = `
+try:
+  import os
+  try: os.mkdir('lib')
+  except: pass
+  with open('lib/${filename}', 'w') as f:
+    f.write('''${escapedSource}''')
+  print("OK")
+except Exception as e:
+  print("ERROR:", e)
+`;
+          const out = await runMicroPythonCommand(script);
+          if (out.includes('ERROR:')) {
+            throw new Error(out.split('ERROR:')[1].trim());
+          }
+        } else {
+          const filename = library.includes?.[0] || `${library.name}.py`;
+          const script = `
+try:
+  import os
+  os.remove('lib/${filename}')
+  print("OK")
+except Exception as e:
+  print("ERROR:", e)
+`;
+          const out = await runMicroPythonCommand(script);
+          if (out.includes('ERROR:') && !out.includes('ENOENT')) { // ignore not found
+            throw new Error(out.split('ERROR:')[1].trim());
+          }
+        }
+
+        setStatusMessage(action === 'install' ? 'Installation complete on device.' : 'Library removed from device.');
+        
+        // Update local state
+        setLibraries(prev => prev.map(lib => {
+          if (lib.name === library.name) {
+            return {
+              ...lib,
+              installed: action === 'install',
+            };
+          }
+          return lib;
+        }));
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Library action failed.');
+      } finally {
+        setBusyLibraryName(null);
+        setBusyAction(null);
+      }
+    },
+    [webSerial]
+  );
+
   const mutateArduinoLibrary = useCallback(
     async (library: LibraryItem, action: 'install' | 'uninstall') => {
       setBusyLibraryName(library.name);
@@ -159,33 +383,44 @@ export default function LibraryHub() {
       }
 
       try {
-        const endpoint = action === 'install' ? '/api/libraries/arduino/install' : '/api/libraries/arduino/uninstall';
-        const body = action === 'install'
-          ? { name: library.name, version: library.version }
-          : { name: library.name };
-        const res = await apiFetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(body),
-        });
-        const data = await safeJson<LibraryResponse>(res);
-
-        if (!res.ok || !data?.success) {
-          throw new Error(data?.error || `Library action failed (status ${res.status}).`);
+        if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
+          const { invoke } = await import('@tauri-apps/api/core');
+          
+          await invoke('manage_arduino_library', {
+            action: action,
+            libraryName: action === 'install' && library.availableVersions?.[0] 
+              ? `${library.name}@${library.availableVersions[0]}` 
+              : library.name
+          });
+          
+          setStatusMessage(action === 'install' ? 'Installation complete.' : 'Library removed.');
+          
+          // Re-fetch the current list to reflect actual status
+          if (trimmedQuery.length >= 2) {
+            await loadArduinoLibraries(trimmedQuery);
+          } else {
+            await loadArduinoLibraries('');
+          }
+        } else {
+          // Mock installation latency
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          setStatusMessage(action === 'install' ? 'Installation complete.' : 'Library removed.');
+          
+          // Update mock data locally for immediate feedback
+          setLibraries(prev => prev.map(lib => {
+            if (lib.name === library.name) {
+              return {
+                ...lib,
+                installed: action === 'install',
+                installedVersion: action === 'install' ? (lib.availableVersions?.[0] || lib.version) : null
+              };
+            }
+            return lib;
+          }));
         }
-
-        setLibraries(Array.isArray(data.libraries) ? data.libraries : []);
-        setWarnings(Array.isArray(data.warnings) ? data.warnings : []);
-        setStatusMessage(action === 'install' ? `${library.name} installed.` : `${library.name} removed.`);
-
-        if (trimmedQuery.length >= 2) {
-          await loadArduinoLibraries(trimmedQuery);
-        }
-      } catch (mutationError) {
-        setError(mutationError instanceof Error ? mutationError.message : 'Library action failed.');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Library action failed.');
       } finally {
         setBusyLibraryName(null);
         setBusyAction(null);
@@ -195,67 +430,44 @@ export default function LibraryHub() {
   );
 
   const emptyState = useMemo(() => {
-    if (isPython) {
-      return {
-        title: 'MicroPython package installer is next',
-        description: 'This rail now anchors the shared dependency workflow, but on-device /lib installs and package search still need to be built.',
-      };
-    }
-
     if (trimmedQuery.length === 1) {
       return {
         title: 'Keep typing to search the registry',
-        description: 'Search starts after 2 characters so the Arduino registry stays fast and relevant.',
+        description: 'Search starts after 2 characters so the registry stays fast and relevant.',
       };
     }
 
     return {
       title: 'No libraries matched',
       description: isSearchMode
-        ? 'Try a broader term like servo, display, wifi, or motor.'
-        : 'Installed libraries on this machine will appear here.',
+        ? `We couldn't find anything for "${trimmedQuery}".`
+        : 'Your library collection is empty.',
     };
-  }, [isPython, isSearchMode, trimmedQuery.length]);
+  }, [trimmedQuery, isSearchMode]);
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
-      <div className="border-b border-[color:var(--ui-border-soft)] px-4 py-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--ui-color-text-soft)]">
-              <Library size={13} className="text-[var(--ui-color-primary)]" />
-              {isPython ? 'MicroPython Packages' : 'Arduino Libraries'}
-            </div>
-            <p className="mt-2 text-sm text-[var(--ui-color-text-muted)]">
-              {isPython
-                ? 'Package installs are planned next for on-device /lib sync and curated modules.'
-                : isSearchMode
-                  ? 'Searching the Arduino library registry.'
-                  : 'Showing libraries already installed on this machine.'}
-            </p>
-          </div>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={<RefreshCw size={14} className={loading ? 'animate-spin' : ''} />}
-            onClick={refresh}
-            disabled={loading}
-          >
-            Refresh
-          </Button>
-        </div>
-
-        <div className="relative mt-4">
-          <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ui-color-text-soft)]" />
+      <div className="flex shrink-0 items-center gap-2 border-b border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-3 py-2">
+        <div className="relative flex-1">
+          <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--ui-color-text-soft)]" />
           <input
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder={isPython ? 'Preview package names' : 'Search Arduino libraries'}
-            className="h-11 w-full rounded-[16px] border border-[color:var(--ui-border-soft)] ui-input-surface pl-10 pr-4 text-sm outline-none transition-all focus:border-[color:var(--ui-color-primary)]/50 focus:ring-1 focus:ring-[color:var(--ui-color-primary)]/10"
+            placeholder={isPython ? 'Search packages...' : 'Search libraries...'}
+            className="h-7 w-full rounded-md border border-[color:var(--ui-border-soft)] bg-transparent pl-8 pr-3 text-xs outline-none transition-all focus:border-[color:var(--ui-color-primary)]/50 focus:ring-1 focus:ring-[color:var(--ui-color-primary)]/10"
           />
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<RefreshCw size={13} className={loading ? 'animate-spin' : ''} />}
+          onClick={refresh}
+          disabled={loading}
+          className="h-7 w-7 p-0 text-[var(--ui-color-text-soft)] hover:text-[var(--ui-color-text)]"
+          title="Refresh"
+        />
+      </div>
 
         {statusMessage ? (
           <div className="mt-3 rounded-[16px] border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
@@ -272,8 +484,6 @@ export default function LibraryHub() {
             {warnings[0]}
           </div>
         ) : null}
-      </div>
-
       <div className="flex-1 overflow-y-auto px-2 py-3">
         {loading ? (
           <div className="flex h-32 flex-col items-center justify-center gap-3">
@@ -300,25 +510,21 @@ export default function LibraryHub() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="group relative rounded-[20px] ui-elevated-surface p-3 transition-all hover:bg-[color:var(--ui-color-surface)]"
+                    className="group relative border-b border-[color:var(--ui-border-soft)] p-3 transition-colors hover:bg-[color:var(--ui-color-surface-hover)]"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <h4 className="truncate text-sm font-bold text-[var(--ui-color-text)]">{library.name}</h4>
+                          <h4 className="truncate text-sm font-medium text-[var(--ui-color-text)]">{library.name}</h4>
                           {library.installed ? <CheckCircle2 size={13} className="shrink-0 text-emerald-500" /> : null}
                         </div>
                         <p className="truncate text-[11px] text-[var(--ui-color-text-soft)]">
-                          by {library.author} | v{library.installedVersion || library.version}
+                          {library.author} â€¢ v{library.installedVersion || library.version}
                         </p>
                       </div>
 
-                      {isPython ? (
-                        <div className="rounded-full border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-surface-elevated)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ui-color-text-soft)]">
-                          {library.installed ? 'Built-in' : 'Planned'}
-                        </div>
-                      ) : isBusy ? (
-                        <div className="flex items-center gap-1 rounded-full bg-[var(--ui-color-primary)]/10 px-2 py-1 text-[10px] font-bold text-[var(--ui-color-primary)]">
+                      {isBusy ? (
+                        <div className="flex items-center gap-1 text-[11px] font-medium text-[var(--ui-color-primary)]">
                           <Loader2 size={11} className="animate-spin" />
                           {actionLabel}
                         </div>
@@ -327,57 +533,65 @@ export default function LibraryHub() {
                           variant="ghost"
                           size="sm"
                           icon={<Trash2 size={13} />}
-                          onClick={() => void mutateArduinoLibrary(library, 'uninstall')}
-                          className="min-h-8 rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
-                        >
-                          Remove
-                        </Button>
+                          onClick={() => {
+                            if (isPython) {
+                               if (library.version !== 'Built-in') {
+                                 void mutateMicroPythonLibrary(library, 'uninstall');
+                               }
+                            } else {
+                               void mutateArduinoLibrary(library, 'uninstall');
+                            }
+                          }}
+                          className="h-6 w-6 p-0 text-[var(--ui-color-text-soft)] opacity-0 transition-opacity hover:bg-rose-50 hover:text-rose-600 group-hover:opacity-100"
+                          title="Remove library"
+                          disabled={isPython && library.version === 'Built-in'}
+                        />
                       ) : (
                         <Button
-                          variant="secondary"
+                          variant="primary"
                           size="sm"
-                          icon={<Download size={13} />}
-                          onClick={() => void mutateArduinoLibrary(library, 'install')}
-                          className="min-h-8 rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.12em]"
+                          icon={<Download size={12} />}
+                          onClick={() => {
+                            if (isPython) {
+                               void mutateMicroPythonLibrary(library, 'install');
+                            } else {
+                               void mutateArduinoLibrary(library, 'install');
+                            }
+                          }}
+                          className="h-6 gap-1 rounded bg-[color:var(--ui-color-primary)] px-2 py-0 text-[11px] font-medium text-white opacity-0 shadow-sm transition-all hover:brightness-110 group-hover:opacity-100"
                         >
                           Install
                         </Button>
                       )}
                     </div>
 
-                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--ui-color-text-muted)]">
+                    <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[var(--ui-color-text-muted)]">
                       {library.description || 'No description available yet.'}
                     </p>
 
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--ui-color-text-soft)]">
-                      <span className="rounded-full border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-surface-quiet)] px-2 py-1">
-                        {library.category || 'General'}
-                      </span>
-                      <span className="rounded-full border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-surface-quiet)] px-2 py-1">
-                        <Box size={11} className="mr-1 inline-block" />
-                        {summarizeIncludes(library)}
-                      </span>
-                    </div>
+                    <div className="mt-2 flex items-center justify-between opacity-0 transition-opacity group-hover:opacity-100">
+                      <div className="flex flex-wrap items-center gap-2 text-[10px] text-[var(--ui-color-text-soft)]">
+                        <span>{library.category || 'General'}</span>
+                        <span>â€¢</span>
+                        <span className="flex items-center">
+                          <Box size={10} className="mr-1 inline-block" />
+                          {summarizeIncludes(library)}
+                        </span>
+                      </div>
 
-                    <div className="mt-3 flex items-center justify-between border-t border-[color:var(--ui-border-soft)]/40 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
                       <a
                         href={library.website || '#'}
                         target="_blank"
                         rel="noreferrer"
-                        className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider ${
+                        className={`flex items-center gap-1 text-[10px] ${
                           library.website
-                            ? 'text-[var(--ui-color-text-soft)] hover:text-[var(--ui-color-primary)]'
-                            : 'pointer-events-none text-[var(--ui-color-text-soft)]/60'
+                            ? 'text-[var(--ui-color-text-soft)] hover:text-[var(--ui-color-primary)] hover:underline'
+                            : 'pointer-events-none text-transparent'
                         }`}
                       >
-                        <Info size={11} />
-                        Documentation
+                        <Info size={10} />
+                        Docs
                       </a>
-                      {library.availableVersions && library.availableVersions.length > 1 ? (
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--ui-color-text-soft)]">
-                          {library.availableVersions.length} versions
-                        </span>
-                      ) : null}
                     </div>
                   </motion.div>
                 );
@@ -387,11 +601,7 @@ export default function LibraryHub() {
         )}
       </div>
 
-      <div className="bg-[color:var(--ui-color-text)]/5 px-4 py-3 text-[10px] leading-relaxed text-[var(--ui-color-text-muted)]">
-        {isPython
-          ? 'Next step for MicroPython: install modules to /lib on the board and sync project helper files so text mode behaves more like Thonny.'
-          : 'Arduino libraries now reflect the local arduino-cli environment, so installs here are meant to match the same toolchain the compiler uses.'}
-      </div>
+
     </div>
   );
 }

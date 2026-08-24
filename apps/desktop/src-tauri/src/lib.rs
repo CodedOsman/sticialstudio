@@ -133,11 +133,32 @@ async fn setup_arduino_cli(app: tauri::AppHandle) -> Result<String, String> {
     }
 }
 
+#[tauri::command]
+async fn manage_arduino_library(app: tauri::AppHandle, action: String, library_name: String) -> Result<String, String> {
+    let mut args = vec!["lib", &action];
+    if !library_name.is_empty() {
+        args.push(&library_name);
+    }
+    args.push("--format");
+    args.push("json");
+
+    let cmd = app.shell().sidecar("arduino-cli").map_err(|e| e.to_string())?
+        .args(args);
+        
+    let output = cmd.output().await.map_err(|e| e.to_string())?;
+    
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_shell::init())
-    .invoke_handler(tauri::generate_handler![compile_sketch, upload_sketch, setup_arduino_cli])
+    .invoke_handler(tauri::generate_handler![compile_sketch, upload_sketch, setup_arduino_cli, manage_arduino_library])
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(

@@ -380,8 +380,7 @@ export default function TextEditor({
   useEffect(() => {
     if (!monacoInstance) return;
     registerThemes();
-    monacoInstance.editor.setTheme(monacoThemeName);
-  }, [monacoInstance, monacoThemeName, registerThemes]);
+  }, [monacoInstance, registerThemes]);
 
 
 

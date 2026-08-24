@@ -52,17 +52,19 @@ export function useSerialTransport({ addMessage }: UseSerialTransportOptions): S
           continue;
         }
 
-        chunkListenerRef.current?.(value);
+        const handled = chunkListenerRef.current?.(value);
 
-        lineBuffer += value;
-        const lines = lineBuffer.split('\n');
-        lineBuffer = lines.pop() ?? '';
+        if (!handled) {
+          lineBuffer += value;
+          const lines = lineBuffer.split('\n');
+          lineBuffer = lines.pop() ?? '';
 
-        lines.forEach((line) => {
-          if (line.trim() !== '' || line === '\r') {
-            addMessage('app', line.replace(/\r$/, ''));
-          }
-        });
+          lines.forEach((line) => {
+            if (line.trim() !== '' || line === '\r') {
+              addMessage('app', line.replace(/\r$/, ''));
+            }
+          });
+        }
       } catch (error) {
         if (keepReadingRef.current) {
           addMessage('error', `Read error: ${(error as Error).message}`);
@@ -160,6 +162,8 @@ export function useSerialTransport({ addMessage }: UseSerialTransportOptions): S
     }
   }, [addMessage, resumeDecodedReadPipeline]);
 
+  const hasLoggedNoAuthRef = useRef(false);
+
   const reconnect = useCallback(async (baudRate?: number) => {
     if (!('serial' in navigator)) {
       return;
@@ -170,7 +174,10 @@ export function useSerialTransport({ addMessage }: UseSerialTransportOptions): S
     try {
       const ports = await navigator.serial.getPorts();
       if (ports.length === 0) {
-        addMessage('error', 'No previously authorized ports found for auto-reconnect.');
+        if (!hasLoggedNoAuthRef.current) {
+          addMessage('error', 'No previously authorized ports found for auto-reconnect.');
+          hasLoggedNoAuthRef.current = true;
+        }
         return;
       }
 
@@ -181,6 +188,7 @@ export function useSerialTransport({ addMessage }: UseSerialTransportOptions): S
       portRef.current = port;
       baudRateRef.current = rate;
       setIsConnected(true);
+      hasLoggedNoAuthRef.current = false;
 
       await resumeDecodedReadPipeline();
 
@@ -210,21 +218,28 @@ export function useSerialTransport({ addMessage }: UseSerialTransportOptions): S
     }
   }, [addMessage, pauseDecodedReadPipeline]);
 
+  const writeMutex = useRef<Promise<void>>(Promise.resolve());
+
   const writeBytes = useCallback(async (data: Uint8Array) => {
     if (!portRef.current?.writable) {
       addMessage('error', 'Port not writable or not connected.');
       return;
     }
 
-    try {
-      const writer = portRef.current.writable.getWriter();
-      writerRef.current = writer;
-      await writer.write(data);
-      writer.releaseLock();
-      writerRef.current = null;
-    } catch (error) {
-      addMessage('error', `WriteBytes error: ${(error as Error).message}`);
-    }
+    const performWrite = async () => {
+      try {
+        const writer = portRef.current!.writable.getWriter();
+        writerRef.current = writer;
+        await writer.write(data);
+        writer.releaseLock();
+        writerRef.current = null;
+      } catch (error) {
+        addMessage('error', `WriteBytes error: ${(error as Error).message}`);
+      }
+    };
+
+    writeMutex.current = writeMutex.current.then(performWrite, performWrite);
+    await writeMutex.current;
   }, [addMessage]);
 
   const writeText = useCallback(async (text: string) => {

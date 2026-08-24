@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -23,7 +23,7 @@ interface VirtualProjectRailProps {
 }
 
 const chipClass =
-  'inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300';
+  'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium text-[color:var(--ui-color-text-soft)] bg-[color:var(--ui-color-surface-hover)] border border-[color:var(--ui-border-soft)]';
 
 export default function VirtualProjectRail({
   activeView,
@@ -68,40 +68,16 @@ export default function VirtualProjectRail({
     [activeView, buildReady, codingLabel, codingMode, hasCode, isSimulationActive, onBackToCircuit, onOpenCode, simulationReady]
   );
 
-  const statusText = useMemo(() => {
-    if (!buildReady) {
-      return 'Place a board and a few parts.';
-    }
-
-    if (!hasCode) {
-      return codingMode === 'text' ? 'Add code next.' : 'Add blocks next.';
-    }
-
-    if (isSimulationBusy) {
-      return 'Preparing simulation...';
-    }
-
-    if (simulationReady) {
-      return isSimulationActive ? 'Simulation is live.' : 'Ready to simulate.';
-    }
-
-    return 'Project context is linked.';
-  }, [buildReady, codingMode, hasCode, isSimulationActive, isSimulationBusy, simulationReady]);
-
   return (
     <motion.section
-      className="circuit-lab-flow mt-3 rounded-[16px] border border-white/7 bg-[#0b1017] px-4 py-2.5"
+      className="mt-3 flex items-center justify-between rounded-lg border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] px-3 py-2"
       variants={fadeInUp}
       initial="hidden"
       animate="visible"
     >
-      <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
-        <div className="min-w-0 flex flex-wrap items-center gap-3">
-          <div className="hidden text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 lg:block">
-            Flow
-          </div>
-          <WorkspaceStageRail items={railItems} variant="dark" className="w-fit" />
-          <p className="text-sm text-slate-400">{statusText}</p>
+      <div className="flex flex-1 items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <WorkspaceStageRail items={railItems} variant="default" className="w-fit" />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

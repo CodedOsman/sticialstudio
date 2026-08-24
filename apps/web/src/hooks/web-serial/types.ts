@@ -6,4 +6,4 @@ export interface SerialMessage {
 
 export type SerialMessageType = SerialMessage['type'];
 export type SerialMessageSink = (type: SerialMessageType, text: string) => void;
-export type SerialChunkListener = ((chunk: string) => void) | null;
+export type SerialChunkListener = ((chunk: string) => boolean) | null;

@@ -19,18 +19,19 @@ export function useMicroPythonProtocol({ isConnected, addMessage, transport }: U
 
   const handleIncomingChunk = useCallback((chunk: string) => {
     if (!outputCaptureRef.current.active) {
-      return;
+      return false;
     }
 
     outputCaptureRef.current.buffer += chunk;
     if (!outputCaptureRef.current.buffer.includes('\x04>')) {
-      return;
+      return true;
     }
 
     outputCaptureRef.current.active = false;
     const onComplete = outputCaptureRef.current.onComplete;
     outputCaptureRef.current.onComplete = null;
     onComplete?.(outputCaptureRef.current.buffer);
+    return true;
   }, []);
 
   useEffect(() => {
@@ -40,28 +41,35 @@ export function useMicroPythonProtocol({ isConnected, addMessage, transport }: U
     };
   }, [handleIncomingChunk, transport]);
 
+  const protocolMutex = useRef<Promise<void>>(Promise.resolve());
+
   const executeMicroPythonRaw = useCallback(async (code: string) => {
     if (!isConnected) {
       addMessage('error', 'Cannot execute: Board not connected.');
       return;
     }
 
-    addMessage('system', 'Uploading to board (Raw REPL)...');
+    const performExecution = async () => {
+      addMessage('system', 'Uploading to board (Raw REPL)...');
 
-    try {
-      await transport.writeBytes(new Uint8Array([0x03, 0x03]));
-      await sleep(100);
-      await transport.writeBytes(new Uint8Array([0x01]));
-      await sleep(50);
+      try {
+        await transport.writeBytes(new Uint8Array([0x03, 0x03]));
+        await sleep(100);
+        await transport.writeBytes(new Uint8Array([0x01]));
+        await sleep(50);
 
-      const encoder = new TextEncoder();
-      await transport.writeBytes(encoder.encode(code));
-      await transport.writeBytes(new Uint8Array([0x04]));
-      await sleep(100);
-      await transport.writeBytes(new Uint8Array([0x02]));
-    } catch (error) {
-      addMessage('error', `Execution failed: ${(error as Error).message}`);
-    }
+        const encoder = new TextEncoder();
+        await transport.writeBytes(encoder.encode(code));
+        await transport.writeBytes(new Uint8Array([0x04]));
+        await sleep(100);
+        await transport.writeBytes(new Uint8Array([0x02]));
+      } catch (error) {
+        addMessage('error', `Execution failed: ${(error as Error).message}`);
+      }
+    };
+
+    protocolMutex.current = protocolMutex.current.then(performExecution, performExecution);
+    await protocolMutex.current;
   }, [addMessage, isConnected, transport]);
 
   const runMicroPythonCommand = useCallback(async (code: string, timeoutMs: number = 8000): Promise<string> => {
@@ -69,7 +77,7 @@ export function useMicroPythonProtocol({ isConnected, addMessage, transport }: U
       throw new Error('Board not connected.');
     }
 
-    return new Promise<string>(async (resolve, reject) => {
+    const performCommand = (): Promise<string> => new Promise<string>(async (resolve, reject) => {
       outputCaptureRef.current = {
         active: true,
         buffer: '',
@@ -78,8 +86,9 @@ export function useMicroPythonProtocol({ isConnected, addMessage, transport }: U
           await transport.writeBytes(new Uint8Array([0x02]));
 
           let output = data;
-          if (output.startsWith('OK')) {
-            output = output.substring(2);
+          const okIndex = output.indexOf('OK');
+          if (okIndex !== -1) {
+            output = output.substring(okIndex + 2);
           }
 
           const parts = output.split('\x04');
@@ -108,6 +117,13 @@ export function useMicroPythonProtocol({ isConnected, addMessage, transport }: U
         outputCaptureRef.current.onComplete = null;
         reject(error);
       }
+    });
+
+    return new Promise((resolve, reject) => {
+      protocolMutex.current = protocolMutex.current.then(
+        () => performCommand().then(resolve, reject),
+        () => performCommand().then(resolve, reject)
+      );
     });
   }, [isConnected, transport]);
 

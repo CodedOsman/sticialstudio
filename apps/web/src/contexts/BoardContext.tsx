@@ -98,29 +98,21 @@ function readStoredBoardState(): PersistedBoardState {
 }
 
 export function BoardProvider({ children }: { children: ReactNode }) {
+    const initialState = readStoredBoardState();
     const defaultBoard: BoardKey = 'Arduino Uno' in BOARD_CONFIG
         ? 'Arduino Uno'
         : (Object.keys(BOARD_CONFIG)[0] as BoardKey);
 
-    const initialConfig = BOARD_CONFIG[defaultBoard];
-
-    const [currentBoard, setCurrentBoard] = useState<BoardKey>(defaultBoard);
-    const [codingMode, setCodingMode] = useState<CodingMode>('block');
-    const [language, setLanguage] = useState<string | null>(initialConfig.language ?? null);
-    const [generator, setGenerator] = useState<string | null>(initialConfig.generator ?? null);
+    const [currentBoard, setCurrentBoard] = useState<BoardKey>(initialState.currentBoard ?? defaultBoard);
+    const [codingMode, setCodingMode] = useState<CodingMode>(initialState.codingMode ?? 'block');
+    const [language, setLanguage] = useState<string | null>(initialState.language ?? null);
+    const [generator, setGenerator] = useState<string | null>(initialState.generator ?? null);
     const [isFullScreen, setIsFullScreen] = useState(false);
-    const [environment, setEnvironment] = useState<HardwareEnvironment | null>('physical');
-    const [pendingProjectIntent, setPendingProjectIntentState] = useState<PendingProjectIntent | null>(null);
+    const [environment, setEnvironment] = useState<HardwareEnvironment | null>(initialState.environment ?? 'physical');
+    const [pendingProjectIntent, setPendingProjectIntentState] = useState<PendingProjectIntent | null>(initialState.pendingProjectIntent ?? null);
     const [hasHydrated, setHasHydrated] = useState(false);
 
     useEffect(() => {
-        const stored = readStoredBoardState();
-        if (stored.currentBoard) setCurrentBoard(stored.currentBoard);
-        if (stored.codingMode !== undefined) setCodingMode(stored.codingMode);
-        if (stored.language !== undefined) setLanguage(stored.language);
-        if (stored.generator !== undefined) setGenerator(stored.generator);
-        if (stored.environment !== undefined) setEnvironment(stored.environment);
-        if (stored.pendingProjectIntent !== undefined) setPendingProjectIntentState(stored.pendingProjectIntent);
         setHasHydrated(true);
     }, []);
 

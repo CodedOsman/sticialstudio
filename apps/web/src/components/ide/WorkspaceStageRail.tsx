@@ -26,8 +26,8 @@ export default function WorkspaceStageRail({ items, className, variant = "defaul
     <motion.div
       className={cn(
         dark
-          ? "inline-flex flex-wrap items-center gap-2 rounded-[18px] border border-white/10 bg-white/[0.03] p-1.5 shadow-[0_14px_34px_-28px_rgba(0,0,0,0.55)]"
-          : "inline-flex flex-wrap items-center gap-2 rounded-[18px] border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] p-1.5 shadow-[0_14px_30px_-24px_rgba(26,41,72,0.16)]",
+          ? "inline-flex flex-wrap items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1 shadow-[0_14px_34px_-28px_rgba(0,0,0,0.55)]"
+          : "inline-flex flex-wrap items-center gap-1 rounded-lg border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-surface-elevated)] p-1 shadow-[0_14px_30px_-24px_rgba(26,41,72,0.16)]",
         className
       )}
       variants={fadeInUp}
@@ -37,7 +37,7 @@ export default function WorkspaceStageRail({ items, className, variant = "defaul
       {items.map((item) => {
         const interactive = typeof item.onClick === "function";
         const sharedClassName = cn(
-          "inline-flex items-center gap-2 rounded-[14px] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition-all",
+          "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-[13px] font-medium transition-all",
           dark
             ? item.active
               ? "border border-white/14 bg-[linear-gradient(180deg,#666cf6_0%,#565ce8_100%)] text-white shadow-[0_14px_28px_-18px_rgba(92,96,244,0.58)]"
@@ -45,10 +45,10 @@ export default function WorkspaceStageRail({ items, className, variant = "defaul
                 ? "border border-white/8 bg-white/[0.03] text-slate-400"
                 : "text-slate-300 hover:bg-white/[0.05] hover:text-white"
             : item.active
-              ? "bg-[var(--ui-color-primary)] text-white shadow-[var(--ui-shadow-button)]"
+              ? "bg-[color:var(--ui-color-surface)] text-[color:var(--ui-color-text)] shadow-sm border border-[color:var(--ui-border-soft)]"
               : item.subtle
-                ? "border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] text-[var(--ui-color-text-soft)]"
-                : "text-[var(--ui-color-text-muted)] hover:bg-[color:var(--ui-color-surface)] hover:text-[var(--ui-color-text)]",
+                ? "border border-transparent bg-transparent text-[color:var(--ui-color-text-muted)] opacity-70"
+                : "border border-transparent text-[color:var(--ui-color-text-soft)] hover:bg-[color:var(--ui-color-surface-hover)] hover:text-[color:var(--ui-color-text)]",
           interactive && "cursor-pointer"
         );
 

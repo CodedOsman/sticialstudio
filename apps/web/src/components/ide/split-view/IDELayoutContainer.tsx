@@ -21,18 +21,14 @@ import IdeShellFrame from '../IdeShellFrame';
 import IdeActivityBar from '../IdeActivityBar';
 import IdeStatusBar from '../IdeStatusBar';
 import IdeLeftRail from '../IdeLeftRail';
-import IdeRightContextPanel, { type IdeRightContextView } from '../IdeRightContextPanel';
 import IdeBottomDock from '../IdeBottomDock';
-import DeviceFiles from '../DeviceFiles';
-import BoardStatusPanel from '../BoardStatusPanel';
 import VirtualProjectRail from '../VirtualProjectRail';
-import AiChatPanel from '../AiChatPanel';
 import LibraryHub from '../LibraryHub';
 import PreferencesDialog from '../PreferencesDialog';
 import { IDEErrorBoundary } from '../ErrorBoundary';
 import SaveProjectModal from './SaveProjectModal';
 import NewSketchDialog from './NewSketchDialog';
-import { LEFT_PANEL_WIDTH, RIGHT_PANEL_WIDTH } from './constants';
+import { LEFT_PANEL_WIDTH } from './constants';
 import { useSplitViewEventBus } from './SplitViewEventBus';
 import { useEditorOrchestrator } from './EditorOrchestrator';
 
@@ -98,47 +94,6 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
 
   const shouldShowCodeGuidance = !editor.isBlockMode && editor.sourceCode.trim().length === 0;
 
-
-  const rightViews = useMemo<IdeRightContextView[]>(() => {
-    const views: IdeRightContextView[] = [
-      {
-        id: 'ai-chat',
-        label: 'AI Chat',
-        tone: 'violet',
-        content: <AiChatPanel />,
-      },
-      {
-        id: 'status',
-        label: 'Status',
-        tone: 'slate',
-        content: (
-          <BoardStatusPanel
-            boardName={editor.currentBoard}
-            codingMode={editor.codingMode}
-            environment={editor.environment}
-            isConnected={webSerial.isConnected}
-          />
-        ),
-      },
-    ];
-
-    if (compile.supportsDeviceFiles) {
-      views.unshift({
-        id: 'device',
-        label: 'Device',
-        tone: 'cyan',
-        content: <DeviceFiles webSerial={webSerial} />,
-      });
-    }
-
-    return views;
-  }, [compile.supportsDeviceFiles, editor.codingMode, editor.currentBoard, editor.environment, webSerial]);
-
-  React.useEffect(() => {
-    if (!rightViews.some((view) => view.id === layout.rightPanelView)) {
-      layout.setRightPanelView(layout.defaultRightView);
-    }
-  }, [layout, rightViews]);
 
   const runtimeLabel = editor.boardConfig?.runtimeLabel || (editor.currentLanguage === 'python' ? 'MicroPython' : 'Arduino C++');
   const [isNewSketchDialogOpen, setIsNewSketchDialogOpen] = React.useState(false);
@@ -258,7 +213,7 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
           </IDEErrorBoundary>
         ),
       },
-      { id: 'libraries', label: 'Libraries', content: <LibraryHub /> },
+      { id: 'libraries', label: 'Libraries', content: <LibraryHub webSerial={webSerial} /> },
     ],
     [handleResetFileExplorerZone],
   );
@@ -289,7 +244,7 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
   );
 
   const textCenterStage = (
-    <div className="ui-foundation-panel relative flex h-full w-full min-h-0 min-w-0 flex-1 overflow-hidden rounded-[30px]">
+    <div className="ui-foundation-panel relative flex h-full w-full min-h-0 min-w-0 flex-1 overflow-hidden">
       <IDEErrorBoundary
         zone="Text Editor"
         title="The text editor hit a problem"
@@ -413,9 +368,10 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
         isSaving={autoSaveManager.isSaving}
         hasUnsavedChanges={hasUnsavedChanges}
         leftCollapsed={layout.leftCollapsed}
-        rightCollapsed={layout.rightCollapsed}
         bottomCollapsed={layout.bottomCollapsed}
+        rightCollapsed={layout.rightCollapsed}
         showPanelControls={!editor.isBlockMode}
+        onToggleRight={layout.toggleRightCollapsed}
         onVerify={() => eventBus.emit('compile:verify-request', undefined)}
         onUpload={() => eventBus.emit('compile:upload-request', undefined)}
         onConnectDevice={() => eventBus.emit('device:connect-toggle-request', undefined)}
@@ -425,7 +381,6 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
         onNewSketch={handleRequestNewSketch}
         onOpenPreferences={openPreferences}
         onToggleLeft={layout.toggleLeftCollapsed}
-        onToggleRight={layout.toggleRightCollapsed}
         onToggleBottom={() => layout.setBottomCollapsed((prev) => !prev)}
         saveStatusText={autoSaveManager.visibleSaveStatusText}
         saveStatusTone={autoSaveManager.visibleSaveStatusTone}
@@ -456,20 +411,9 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
             <IdeShellFrame
               left={leftStage}
               center={textCenterStage}
-              right={
-                <IdeRightContextPanel
-                  title="AI Assistant"
-                  subtitle="Ask questions, get code help, and debug faster with AI."
-                  views={rightViews}
-                  activeView={layout.rightPanelView}
-                  onChangeView={layout.setRightPanelView}
-                />
-              }
               bottom={bottomStage}
               leftCollapsed={layout.leftCollapsed}
-              rightCollapsed={layout.rightCollapsed}
               leftWidth={LEFT_PANEL_WIDTH}
-              rightWidth={RIGHT_PANEL_WIDTH}
             />
           </div>
         </div>

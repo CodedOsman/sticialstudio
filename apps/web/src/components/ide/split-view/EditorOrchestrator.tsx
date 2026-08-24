@@ -266,13 +266,42 @@ export function useBlocklySync(): EditorOrchestratorValue {
 
     if (entrySourceFile && entrySourceFile.content.trim() === '' && !seededFiles.current.has(entrySourceFile.id)) {
       seededFiles.current.add(entrySourceFile.id);
-      const defaultPython = 'import time\n\n# --- Setup Section ---\npass\n\n# --- Loop Section ---\nwhile True:\n    pass\n';
-      const defaultCpp = 'void setup() {\n  // put your setup code here, to run once:\n\n}\n\nvoid loop() {\n  // put your main code here, to run repeatedly:\n\n}\n';
-
+      
       const isPython = currentLanguage === 'python' || entrySourceFile.name.endsWith('.py');
-      updateFileContent(entrySourceFile.id, isPython ? defaultPython : defaultCpp);
+      updateFileContent(entrySourceFile.id, isPython ? DEFAULT_MICROPYTHON_CODE : DEFAULT_ARDUINO_CODE);
     }
   }, [currentLanguage, entrySourceFile, isBlockMode, updateFileContent]);
+
+  const prevLanguageRef = useRef<string | null>(currentLanguage);
+
+  useEffect(() => {
+    if (files.length === 0 || !bootstrappedRef.current) {
+      prevLanguageRef.current = currentLanguage;
+      return;
+    }
+
+    const langChanged = prevLanguageRef.current !== currentLanguage;
+    prevLanguageRef.current = currentLanguage;
+
+    // If the language changed, or we are switching to text mode and the preferred file is missing,
+    // we need to ensure the correct file exists and is active.
+    if (langChanged || !isBlockMode) {
+      const preferredFile = files.find((f) => f.name === preferredSourceFileName);
+      if (!preferredFile) {
+        const defaultCode = currentLanguage === 'python' ? DEFAULT_MICROPYTHON_CODE : DEFAULT_ARDUINO_CODE;
+        createFile(preferredSourceFileName, currentLanguage || 'cpp', null, defaultCode);
+      } else if (langChanged && !isBlockMode) {
+        // Only force active file change if language actually changed while in text mode,
+        // or if we want to switch context. Actually, if we are in text mode, 
+        // we should ensure the preferred file is active.
+        setActiveFileId(preferredFile.id);
+      } else if (langChanged) {
+        // if language changed in block mode, we don't necessarily need to force active text file,
+        // but it doesn't hurt.
+        setActiveFileId(preferredFile.id);
+      }
+    }
+  }, [currentLanguage, preferredSourceFileName, files, isBlockMode, createFile, setActiveFileId]);
 
   useEffect(() => {
     if (bootstrappedRef.current || files.length > 0) return;
