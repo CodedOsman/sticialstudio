@@ -21,6 +21,8 @@
         "@monaco-editor/react": "^4.7.0",
         "@supabase/supabase-js": "^2.101.1",
         "@tauri-apps/api": "^2.11.1",
+        "@tauri-apps/plugin-process": "^2.3.1",
+        "@tauri-apps/plugin-updater": "^2.11.0",
         "@wokwi/elements": "^1.9.2",
         "avr8js": "^0.21.0",
         "blockly": "^12.4.1",

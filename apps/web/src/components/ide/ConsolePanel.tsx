@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link as LinkIcon, RotateCcw, SendHorizontal, Terminal, Unlink } from 'lucide-react';
+import { Link as LinkIcon, RotateCcw, SendHorizontal, TerminalSquare, Unlink } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { SerialMessage, useWebSerial } from '../../hooks/useWebSerial';
 
@@ -13,8 +13,8 @@ interface ConsolePanelProps {
 export default function ConsolePanel({
     webSerial,
     messages: filteredMessages,
-    emptyTitle = 'No output yet',
-    emptyBody = 'Connect a board or run something to see messages here.',
+    emptyTitle = 'Serial Monitor Ready',
+    emptyBody = 'Connect a board to start sending and receiving serial data.',
 }: ConsolePanelProps) {
     const { isConnected, messages, connect, disconnect, writeText, clearMessages } = webSerial;
     const visibleMessages = filteredMessages ?? messages;
@@ -75,9 +75,9 @@ export default function ConsolePanel({
         >
             <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-800 px-4 py-1 text-xs">
                 <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-2 font-bold uppercase tracking-wider text-gray-400">
-                        <Terminal size={14} />
-                        CMD
+                    <span className="inline-flex items-center gap-2 font-bold uppercase tracking-wider text-gray-300">
+                        <TerminalSquare size={14} className="text-emerald-400" />
+                        SERIAL MONITOR
                     </span>
                     <Button
                         variant="ghost"
@@ -100,7 +100,7 @@ export default function ConsolePanel({
                             value={baudRate}
                             onChange={(e) => setBaudRate(Number(e.target.value))}
                             disabled={isConnected}
-                            className="bg-black text-gray-300 outline-none disabled:opacity-50"
+                            className="bg-black text-gray-300 outline-none disabled:opacity-50 cursor-pointer"
                         >
                             <option value={9600}>9600</option>
                             <option value={19200}>19200</option>
@@ -113,19 +113,20 @@ export default function ConsolePanel({
                         type="button"
                         onClick={clearMessages}
                         className="inline-flex items-center justify-center text-[10px] text-gray-500 transition-colors hover:text-gray-300"
-                        title="Clear terminal"
+                        title="Clear output"
                     >
                         <RotateCcw size={12} className="mr-1" />
-                        CLS
+                        CLEAR
                     </button>
                 </div>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-2">
                 {visibleMessages.length === 0 ? (
-                    <div className="text-gray-600 text-xs">
-                        <p>C:\Users\User\Project&gt; {emptyTitle}</p>
-                        <p>{emptyBody}</p>
+                    <div className="flex h-full min-h-[120px] flex-col items-center justify-center text-center text-gray-500 text-xs">
+                        <TerminalSquare size={24} className="mb-2 text-gray-700" />
+                        <p className="font-semibold uppercase tracking-wider text-gray-400">{emptyTitle}</p>
+                        <p className="mt-1 max-w-sm text-gray-600">{emptyBody}</p>
                     </div>
                 ) : (
                     <div className="space-y-0 text-xs leading-5">
@@ -160,20 +161,28 @@ export default function ConsolePanel({
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="flex-shrink-0 px-4 py-2 text-xs">
+            <div className="flex-shrink-0 border-t border-gray-800 bg-gray-950 px-3 py-2 text-xs">
                 <div className="flex items-center gap-2">
-                    <span className="text-gray-400">&gt;</span>
                     <input
                         type="text"
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={handleKeyDown}
                         disabled={!isConnected}
-                        className="flex-1 bg-transparent text-gray-200 outline-none placeholder:text-gray-600 disabled:opacity-50"
-                        placeholder={isConnected ? '...' : ''}
+                        className="flex-1 rounded border border-gray-800 bg-black px-3 py-1.5 text-gray-200 outline-none placeholder:text-gray-600 focus:border-indigo-500 disabled:opacity-50"
+                        placeholder={isConnected ? 'Type message to send to board... (press Enter)' : 'Connect a board to send serial data'}
                         autoComplete="off"
                         spellCheck={false}
                     />
+                    <button
+                        type="button"
+                        onClick={handleSend}
+                        disabled={!isConnected || !inputValue.trim()}
+                        className="inline-flex items-center gap-1.5 rounded bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
+                    >
+                        <SendHorizontal size={13} />
+                        <span>Send</span>
+                    </button>
                 </div>
             </div>
         </div>

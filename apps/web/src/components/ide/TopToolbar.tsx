@@ -20,6 +20,7 @@ import {
   Save,
   Settings2,
   Sparkles,
+  TerminalSquare,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
@@ -206,6 +207,20 @@ export default function TopToolbar({
               {isConnected ? "Disconnect" : "Connect"}
             </button>
 
+            <button
+              type="button"
+              onClick={onToggleBottom}
+              className={`flex h-9 items-center gap-2 rounded-[10px] border px-3 text-xs font-semibold transition-all ${
+                !bottomCollapsed
+                  ? "border-emerald-400/40 bg-emerald-400/15 text-emerald-300"
+                  : "border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] text-[color:var(--ui-color-text)] hover:text-[var(--ui-color-text)]"
+              }`}
+              title={bottomCollapsed ? "Open Serial Monitor" : "Hide Serial Monitor"}
+            >
+              <TerminalSquare size={14} />
+              <span>Serial Monitor</span>
+            </button>
+
             <div className="mx-1 h-4 w-px bg-[color:var(--ui-border-soft)]" />
 
 
@@ -356,10 +371,15 @@ export default function TopToolbar({
             <button
               type="button"
               onClick={onToggleBottom}
-              className="flex h-8 w-8 items-center justify-center rounded-[8px] text-[color:var(--ui-color-text)] transition-all hover:bg-[color:var(--ui-border-soft)] hover:text-[color:var(--ui-color-text)]"
-              title={bottomCollapsed ? "Show terminal" : "Hide terminal"}
+              className={`flex h-8 items-center gap-1.5 rounded-[8px] border px-2.5 text-xs font-medium transition-all ${
+                !bottomCollapsed
+                  ? "border-indigo-400/40 bg-indigo-500/20 text-indigo-200"
+                  : "border-[color:var(--ui-border-soft)] bg-[color:var(--ui-color-surface)] text-[color:var(--ui-color-text)] hover:bg-[color:var(--ui-border-soft)]"
+              }`}
+              title={bottomCollapsed ? "Open Serial Monitor" : "Hide Serial Monitor"}
             >
-              {bottomCollapsed ? <PanelBottomOpen size={14} /> : <PanelBottomClose size={14} />}
+              <TerminalSquare size={13} />
+              <span>Serial Monitor</span>
             </button>
             
             <button

@@ -23,6 +23,14 @@
       "csp": null
     }
   },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://updates.stemaide.com/update.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDFCNzcyQjVBOEUwQjQ0N0QKUldSOVJBdU9XaXQzRzNYZ0pvY0hHVXd1RFl0ZlNFRzdERTlqZXB5eUprbWNOVGlJRWlyZzJrZzMK"
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",

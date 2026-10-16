@@ -8,6 +8,7 @@ import { useProject } from '@/contexts/ProjectContext';
 import { useBoard } from '@/contexts/BoardContext';
 import { apiFetch, API_BASE_URL, safeJson } from '@/lib/api';
 import { getProjectMetaSummary, parseProjectMeta, type ProjectMeta } from '@/lib/projects/projectMeta';
+import { getLocalProjects, deleteLocalProject, updateLocalProjectName } from '@/lib/projects/localProjectService';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -181,24 +182,65 @@ export default function DashboardPage() {
 
     const fetchProjects = async () => {
       try {
-        const res = await apiFetch('/api/projects', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        let loadedProjects: ProjectData[] = [];
 
-        if (res.ok) {
-          const data = await safeJson<any>(res);
-          if (Array.isArray(data)) {
-            setProjects(data);
-            setApiError(null);
-          } else {
-            setApiError('Unexpected response from the API.');
+        if (token && token !== "local") {
+          try {
+            const res = await apiFetch("/api/projects", {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (res.ok) {
+              const data = await safeJson<any>(res);
+              if (Array.isArray(data)) {
+                loadedProjects = data;
+              }
+            }
+          } catch (e) {
+            console.warn("Could not reach API for projects, using local storage:", e);
           }
-        } else {
-          setApiError(`Failed to load projects (status ${res.status}).`);
         }
+
+        const localList = getLocalProjects();
+        const mergedMap = new Map<string, ProjectData>();
+
+        for (const p of loadedProjects) {
+          mergedMap.set(p.id, p);
+        }
+
+        for (const lp of localList) {
+          mergedMap.set(lp.id, {
+            id: lp.id,
+            name: lp.name,
+            description: lp.description || null,
+            board: lp.board,
+            codingMode: lp.mode,
+            language: lp.language,
+            generator: lp.generator,
+            environment: lp.environment,
+            updatedAt: lp.updatedAt,
+          });
+        }
+
+        setProjects(Array.from(mergedMap.values()));
+        setApiError(null);
       } catch (error) {
-        setApiError(`Could not reach the API at ${API_BASE_URL}.`);
-        console.error('Failed to fetch dashboard projects:', error);
+        console.error("Failed to fetch dashboard projects:", error);
+        const localList = getLocalProjects();
+        setProjects(
+          localList.map((lp) => ({
+            id: lp.id,
+            name: lp.name,
+            description: lp.description || null,
+            board: lp.board,
+            codingMode: lp.mode,
+            language: lp.language,
+            generator: lp.generator,
+            environment: lp.environment,
+            updatedAt: lp.updatedAt,
+          })),
+        );
+        setApiError(null);
       } finally {
         setIsLoading(false);
       }
@@ -242,23 +284,25 @@ export default function DashboardPage() {
   };
 
   const handleConfirmDeleteProject = async () => {
-    if (!token || !projectToDelete) return;
+    if (!projectToDelete) return;
 
     setIsDeletingProject(true);
     try {
-      const res = await apiFetch(`/api/projects/${projectToDelete.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        setProjects((prev) => prev.filter((project) => project.id !== projectToDelete.id));
-        setApiError(null);
-        setProjectToDelete(null);
-      } else {
-        setApiError(`Failed to delete project (status ${res.status}).`);
+      // Always delete from local store
+      deleteLocalProject(projectToDelete.id);
+
+      // Attempt remote delete if token is remote
+      if (token && token !== "local") {
+        await apiFetch(`/api/projects/${projectToDelete.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => {});
       }
+
+      setProjects((prev) => prev.filter((project) => project.id !== projectToDelete.id));
+      setApiError(null);
+      setProjectToDelete(null);
     } catch (error) {
-      setApiError(`Could not reach the API at ${API_BASE_URL}.`);
       console.error('Delete error:', error);
     } finally {
       setIsDeletingProject(false);
@@ -273,30 +317,31 @@ export default function DashboardPage() {
 
   const handleSaveRename = async (e: React.MouseEvent | React.KeyboardEvent | React.FocusEvent, id: string) => {
     e.stopPropagation();
-    if (!token) return;
     if (!editName.trim()) {
       setEditingProjectId(null);
       return;
     }
 
+    const trimmedName = editName.trim();
     try {
-      const res = await apiFetch(`/api/projects/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ name: editName.trim() }),
-      });
+      // Always update locally
+      updateLocalProjectName(id, trimmedName);
 
-      if (res.ok) {
-        setProjects((prev) => prev.map((project) => (project.id === id ? { ...project, name: editName.trim() } : project)));
-        setApiError(null);
-      } else {
-        setApiError(`Failed to rename project (status ${res.status}).`);
+      // Attempt remote rename if token is remote
+      if (token && token !== "local") {
+        await apiFetch(`/api/projects/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ name: trimmedName }),
+        }).catch(() => {});
       }
+
+      setProjects((prev) => prev.map((project) => (project.id === id ? { ...project, name: trimmedName } : project)));
+      setApiError(null);
     } catch (error) {
-      setApiError(`Could not reach the API at ${API_BASE_URL}.`);
       console.error('Rename error:', error);
     } finally {
       setEditingProjectId(null);

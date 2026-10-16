@@ -6,6 +6,7 @@ import { BoardProvider } from '@/contexts/BoardContext';
 import { ProjectProvider } from '@/contexts/ProjectContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { StudioPreferencesProvider } from '@/contexts/StudioPreferencesContext';
+import { UpdateNotifier } from '@/components/layout/UpdateNotifier';
 
 const editorMono = localFont({
   src: './fonts/GeistMonoLatin.woff2',
@@ -32,7 +33,9 @@ export default function RootLayout({
             <BoardProvider>
               <ProjectProvider>
                 {children}
+                <UpdateNotifier />
               </ProjectProvider>
+
             </BoardProvider>
           </StudioPreferencesProvider>
         </ThemeProvider>

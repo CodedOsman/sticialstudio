@@ -9,12 +9,16 @@ import { buildProjectMetaPayload } from '@/lib/projects/projectMeta';
 import { useSplitViewEventBus } from '../SplitViewEventBus';
 import { useCompileController } from '../CompileController';
 import type { useWebSerial } from '@/hooks/useWebSerial';
+import { getDefaultProjectsDirectory, pickProjectFolder } from '@/lib/projects/diskProjectService';
 
 export interface AutoSaveManagerValue {
   isSaving: boolean;
   isSaveModalOpen: boolean;
   newProjectName: string;
   setNewProjectName: Dispatch<SetStateAction<string>>;
+  saveLocation: string;
+  setSaveLocation: Dispatch<SetStateAction<string>>;
+  browseSaveLocation: () => Promise<void>;
   closeSaveModal: () => void;
   submitSaveModal: () => Promise<void>;
   visibleSaveStatusText: string | null;
@@ -89,8 +93,20 @@ export function useAutoSave(webSerial: WebSerialController): AutoSaveManagerValu
   const [isSaving, setIsSaving] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+  const [saveLocation, setSaveLocation] = useState('');
   const [saveStatusText, setSaveStatusText] = useState<string | null>(null);
   const [saveStatusTone, setSaveStatusTone] = useState<'neutral' | 'success' | 'error'>('neutral');
+
+  const browseSaveLocation = useCallback(async () => {
+    try {
+      const selected = await pickProjectFolder(saveLocation);
+      if (selected) {
+        setSaveLocation(selected);
+      }
+    } catch (err) {
+      console.warn('Failed to pick project folder:', err);
+    }
+  }, [saveLocation]);
 
   const saveStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -164,6 +180,13 @@ export function useAutoSave(webSerial: WebSerialController): AutoSaveManagerValu
       if (!projectId) {
         if (origin === 'manual') {
           setNewProjectName(suggestedProjectName);
+          if (!saveLocation) {
+            getDefaultProjectsDirectory()
+              .then((dir) => {
+                if (dir) setSaveLocation(dir);
+              })
+              .catch(() => {});
+          }
           setIsSaveModalOpen(true);
         }
         return false;
@@ -273,7 +296,7 @@ export function useAutoSave(webSerial: WebSerialController): AutoSaveManagerValu
     try {
       setIsSaving(true);
       lifecycleRef.current.isSaving = true;
-      const newId = await saveAsProject(trimmedProjectName);
+      const newId = await saveAsProject(trimmedProjectName, saveLocation);
       const snapshot = buildProjectSnapshot({
         ...contextRef.current,
         projectName: trimmedProjectName,
@@ -302,7 +325,7 @@ export function useAutoSave(webSerial: WebSerialController): AutoSaveManagerValu
       lifecycleRef.current.isSaving = false;
       setIsSaving(false);
     }
-  }, [clearSaveStatusTimeout, eventBus, newProjectName, saveAsProject, scheduleSaveStatusClear, webSerial]);
+  }, [clearSaveStatusTimeout, eventBus, newProjectName, saveAsProject, saveLocation, scheduleSaveStatusClear, webSerial]);
 
   useEffect(() => {
     return eventBus.on('project:save-request', ({ origin }) => {
@@ -377,6 +400,9 @@ export function useAutoSave(webSerial: WebSerialController): AutoSaveManagerValu
     isSaveModalOpen,
     newProjectName,
     setNewProjectName,
+    saveLocation,
+    setSaveLocation,
+    browseSaveLocation,
     closeSaveModal: () => setIsSaveModalOpen(false),
     submitSaveModal,
     visibleSaveStatusText: saveStatusText ?? (!projectId ? 'Scratch workspace' : hasUnsavedChanges ? 'Unsaved changes' : null),

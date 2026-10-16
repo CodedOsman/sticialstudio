@@ -7,6 +7,7 @@ import { useEditorStore } from '@/stores/editorStore';
 import { useBlocklyStore } from '@/stores/blocklyStore';
 import { DEFAULT_ARDUINO_CODE, DEFAULT_MICROPYTHON_CODE } from '@/templates/codeTemplates';
 import { buildSourceCodeFromBlocklyWorkspace } from '@/lib/blockly/codegen';
+import { getLocalProject, saveLocalProject } from '@/lib/projects/localProjectService';
 import { useSplitViewEventBus } from './SplitViewEventBus';
 import { DEFAULT_BLOCKLY_XML } from './constants';
 import {
@@ -403,8 +404,24 @@ export function useBlocklySync(): EditorOrchestratorValue {
 
       syncBoardRuntimeSelection();
       setCodingMode(nextMode);
+
+      if (projectId) {
+        const local = getLocalProject(projectId);
+        if (local) {
+          saveLocalProject({
+            ...local,
+            meta: {
+              board: local.board,
+              mode: nextMode,
+              language: local.language,
+              generator: local.generator,
+              environment: local.environment,
+            },
+          });
+        }
+      }
     },
-    [codingMode, setCodingMode, syncBlocklySourceCode, syncBoardRuntimeSelection],
+    [codingMode, projectId, setCodingMode, syncBlocklySourceCode, syncBoardRuntimeSelection],
   );
 
   useEffect(() => {

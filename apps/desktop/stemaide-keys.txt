@@ -1,0 +1,19 @@
+
+> desktop@1.0.0 tauri
+> tauri signer generate --password 
+
+
+Your keys were generated successfully!
+
+Private: (Keep it secret!)
+dW50cnVzdGVkIGNvbW1lbnQ6IHJzaWduIGVuY3J5cHRlZCBzZWNyZXQga2V5ClJXUlRZMEl5eGNwWGd4azBhUnJ3NXJsbDg0VUV4OXV1QndiaGNuNzAya0ZIRDdzbERBOEFBQkFBQUFBQUFBQUFBQUlBQUFBQXZ5RE84NE9xd3NBdVVCbGdrRVNTbVFlaWw2eEY1VC9XUnR3dVZxNzBDSXlzOG85WW5UZEE4S3QyM29Hb1A4aWFSNnBhcEFKTHo4blcrdEUxa3FTTVo1TFNITDRubWVZeHFnb2J0NE1sT1RLSDFiVW9pRnNvcVVETjIraHAwVGpTOFZNbERlUjg3Tm89Cg==
+
+Public:
+dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDFCNzcyQjVBOEUwQjQ0N0QKUldSOVJBdU9XaXQzRzNYZ0pvY0hHVXd1RFl0ZlNFRzdERTlqZXB5eUprbWNOVGlJRWlyZzJrZzMK
+
+Environment variables used to sign:
+- `TAURI_SIGNING_PRIVATE_KEY`: String of your private key
+- `TAURI_SIGNING_PRIVATE_KEY_PATH`: Path to your private key file
+- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`:  Your private key password (optional if key has no password)
+
+ATTENTION: If you lose your private key OR password, you'll not be able to sign your update package and updates will not work

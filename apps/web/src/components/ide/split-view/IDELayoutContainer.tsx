@@ -290,7 +290,13 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
         description="Serial logs or the terminal UI crashed. Reload this panel or reset the terminal state without leaving the editor."
         onResetState={handleResetTerminalZone}
       >
-        <TerminalPanel webSerial={webSerial} collapsed={layout.bottomCollapsed} />
+        <BlockTerminalShell
+          webSerial={webSerial}
+          collapsed={layout.bottomCollapsed}
+          requestedTab={layout.blockTerminalTab}
+          onToggleCollapsed={() => layout.setBottomCollapsed((prev) => !prev)}
+          onTabChange={layout.setBlockTerminalTab}
+        />
       </IDEErrorBoundary>
     </IdeBottomDock>
   );
@@ -381,7 +387,16 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
         onNewSketch={handleRequestNewSketch}
         onOpenPreferences={openPreferences}
         onToggleLeft={layout.toggleLeftCollapsed}
-        onToggleBottom={() => layout.setBottomCollapsed((prev) => !prev)}
+        onToggleBottom={() => {
+          if (layout.bottomCollapsed) {
+            layout.setBottomCollapsed(false);
+            layout.setBlockTerminalTab('serial');
+          } else if (layout.blockTerminalTab !== 'serial') {
+            layout.setBlockTerminalTab('serial');
+          } else {
+            layout.setBottomCollapsed(true);
+          }
+        }}
         saveStatusText={autoSaveManager.visibleSaveStatusText}
         saveStatusTone={autoSaveManager.visibleSaveStatusTone}
         variant={!editor.isBlockMode ? 'arduino-text' : 'default'}
@@ -428,15 +443,18 @@ export default function IDELayoutContainer({ webSerial }: { webSerial: WebSerial
       ) : null}
 
       <SaveProjectModal
-          open={autoSaveManager.isSaveModalOpen}
-          isSaving={autoSaveManager.isSaving}
-          newProjectName={autoSaveManager.newProjectName}
-          currentBoard={editor.currentBoard}
-          runtimeLabel={runtimeLabel}
-          onNameChange={autoSaveManager.setNewProjectName}
-          onClose={handleCloseSaveProjectModal}
-          onSubmit={() => void autoSaveManager.submitSaveModal()}
-        />
+        open={autoSaveManager.isSaveModalOpen}
+        isSaving={autoSaveManager.isSaving}
+        newProjectName={autoSaveManager.newProjectName}
+        saveLocation={autoSaveManager.saveLocation}
+        currentBoard={editor.currentBoard}
+        runtimeLabel={runtimeLabel}
+        onNameChange={autoSaveManager.setNewProjectName}
+        onLocationChange={autoSaveManager.setSaveLocation}
+        onBrowseLocation={autoSaveManager.browseSaveLocation}
+        onClose={handleCloseSaveProjectModal}
+        onSubmit={() => void autoSaveManager.submitSaveModal()}
+      />
         <NewSketchDialog
           open={isNewSketchDialogOpen}
           isSavingFirst={isSavingBeforeNewSketch}

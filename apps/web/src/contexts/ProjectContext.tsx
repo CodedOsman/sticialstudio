@@ -7,12 +7,13 @@ import { parseProjectMeta } from "@/lib/projects/projectMeta";
 import {
   buildProjectPayload,
   getStoredActiveProjectId,
-
   persistActiveProjectId,
   resolveProjectFilesState,
   type PersistedProjectRecord,
   UNTITLED_PROJECT_NAME,
 } from "@/lib/projects/projectPersistence";
+import { getLocalProject, saveLocalProject } from "@/lib/projects/localProjectService";
+import { saveProjectFilesToDisk } from "@/lib/projects/diskProjectService";
 import { DEFAULT_ARDUINO_CODE, DEFAULT_MICROPYTHON_CODE } from "@/templates/codeTemplates";
 
 import { useBlocklyStore } from "@/stores/blocklyStore";
@@ -29,7 +30,7 @@ export interface ProjectContextValue {
   hasLoadedProjectFiles: boolean;
   refreshProjectFiles: () => Promise<void>;
   saveProject: () => Promise<void>;
-  saveAsProject: (name: string) => Promise<string>;
+  saveAsProject: (name: string, location?: string) => Promise<string>;
   startNewSketch: () => void;
 }
 
@@ -60,6 +61,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const [hasLoadedProjectFiles, setHasLoadedProjectFiles] = useState(() => !getStoredActiveProjectId());
   const filesRef = useRef<FileItem[]>(useEditorStore.getState().files);
   const activeFileIdRef = useRef<string | null>(useEditorStore.getState().activeFileId);
+  const lastLoadedProjectIdRef = useRef<string | null>(null);
   const token = 'local';
   const {
     currentBoard,
@@ -161,36 +163,16 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   }, [clearPendingProjectIntent, codingMode, generator, language]);
 
   const refreshProjectFiles = useCallback(async () => {
-    if (!projectId || !token) return;
+    if (!projectId) return;
 
     setHasLoadedProjectFiles(false);
 
-    try {
-      const res = await apiFetch(`/api/projects/${projectId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) {
-        if (res.status === 404 || res.status === 401) {
-          console.warn(`[ProjectContext] Project ${projectId} not found (${res.status}). Clearing project state.`);
-          stashWorkspaceNotice(
-            res.status === 401
-              ? "Your session ended before this project could load. Sign in again, then reopen your project."
-              : "That project is no longer available. Open another project or start a new one."
-          );
-          setProjectId(null);
-          setHasLoadedProjectFiles(true);
-        } else {
-          console.error("[ProjectContext] Unexpected error fetching project. Status:", res.status);
-          setHasLoadedProjectFiles(true);
-        }
-        return;
-      }
-
-      const data = await safeJson<PersistedProjectRecord | null>(res);
-      const resolvedMeta = applyProjectMetaToBoardContext(data ?? {});
+    // 1. Check local storage first
+    const local = getLocalProject(projectId);
+    if (local) {
+      const resolvedMeta = applyProjectMetaToBoardContext(local);
       const nextProjectState = resolveProjectFilesState({
-        record: data,
+        record: local,
         currentFiles: filesRef.current,
         currentActiveFileId: activeFileIdRef.current,
         language: resolvedMeta.language,
@@ -210,113 +192,195 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       useEditorStore.getState().setFiles(nextProjectState.projectFiles);
       useEditorStore.getState().setActiveFileId(nextProjectState.nextActiveFileId);
       setHasLoadedProjectFiles(true);
-    } catch (error) {
-      console.error("Failed to fetch project files:", error);
-      setHasLoadedProjectFiles(true);
+      return;
     }
-  }, [applyProjectMetaToBoardContext, projectId, setProjectId, token]);
+
+    // 2. Fall back to remote API if not found in local storage and remote token exists
+    if (token && token !== "local") {
+      try {
+        const res = await apiFetch(`/api/projects/${projectId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok) {
+          const data = await safeJson<PersistedProjectRecord | null>(res);
+          if (data) {
+            const resolvedMeta = applyProjectMetaToBoardContext(data);
+            const nextProjectState = resolveProjectFilesState({
+              record: data,
+              currentFiles: filesRef.current,
+              currentActiveFileId: activeFileIdRef.current,
+              language: resolvedMeta.language,
+              generator: resolvedMeta.generator,
+            });
+
+            setProjectNameState(nextProjectState.projectName);
+
+            if (nextProjectState.fallbackFile) {
+              useEditorStore.getState().setFiles([nextProjectState.fallbackFile]);
+              useEditorStore.getState().setActiveFileId(nextProjectState.nextActiveFileId);
+              useEditorStore.getState().setHasUnsavedChanges(true);
+            } else {
+              useEditorStore.getState().setFiles(nextProjectState.projectFiles);
+              useEditorStore.getState().setActiveFileId(nextProjectState.nextActiveFileId);
+            }
+            setHasLoadedProjectFiles(true);
+            return;
+          }
+        }
+      } catch (error) {
+        console.warn("[ProjectContext] Remote project fetch failed:", error);
+      }
+    }
+
+    setHasLoadedProjectFiles(true);
+  }, [applyProjectMetaToBoardContext, projectId, token]);
+
+  const refreshProjectFilesRef = useRef(refreshProjectFiles);
+  useEffect(() => {
+    refreshProjectFilesRef.current = refreshProjectFiles;
+  }, [refreshProjectFiles]);
 
   useEffect(() => {
-    queueMicrotask(() => {
-      void refreshProjectFiles();
-    });
-  }, [projectId, refreshProjectFiles, token]);
+    if (projectId && projectId !== lastLoadedProjectIdRef.current) {
+      lastLoadedProjectIdRef.current = projectId;
+      queueMicrotask(() => {
+        void refreshProjectFilesRef.current();
+      });
+    } else if (!projectId) {
+      lastLoadedProjectIdRef.current = null;
+    }
+  }, [projectId]);
 
   const saveProject = useCallback(async () => {
-    if (!projectId) {
-      throw new Error("Open or create a project first.");
-    }
+    const currentFiles = buildCurrentProjectFiles();
+    const currentMeta = {
+      board: currentBoard,
+      mode: codingMode ?? "block",
+      language,
+      generator,
+      environment,
+    };
 
-    if (!token) {
-      throw new Error("Your session ended. Sign in again to save this project.");
-    }
+    const targetId = projectId || `proj-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const existingLocal = targetId ? getLocalProject(targetId) : null;
+    const targetLocation = existingLocal?.location;
 
-    try {
-      const res = await apiFetch(`/api/projects/${projectId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(buildCurrentProjectPayload()),
-      });
-
-      if (!res.ok) {
-        const data = await safeJson<{ error?: string }>(res);
-        const defaultMessage =
-          res.status === 401
-            ? "Your session ended. Sign in again to save this project."
-            : res.status === 404
-              ? "This project no longer exists. Return to the dashboard and open another project."
-              : `Could not save the project right now (status ${res.status}).`;
-        throw new Error(data?.error || defaultMessage);
+    if (targetLocation) {
+      try {
+        await saveProjectFilesToDisk(targetLocation, projectNameState, currentFiles);
+      } catch (diskErr) {
+        console.warn("Could not write project files to disk:", diskErr);
       }
-
-      useEditorStore.getState().setHasUnsavedChanges(false);
-      await refreshProjectFiles();
-    } catch (error) {
-      console.error("Save Project exception:", error);
-      throw error instanceof Error ? error : new Error("Could not save the project right now.");
     }
-  }, [buildCurrentProjectPayload, projectId, refreshProjectFiles, token]);
+
+    // Always persist to local project storage first so work is never lost
+    saveLocalProject({
+      id: targetId,
+      name: projectNameState,
+      location: targetLocation,
+      files: currentFiles,
+      meta: currentMeta,
+    });
+
+    if (!projectId) {
+      lastLoadedProjectIdRef.current = targetId;
+      setProjectId(targetId);
+    }
+
+    // Optional upstream sync if remote API is available
+    if (token && token !== "local") {
+      try {
+        await apiFetch(`/api/projects/${targetId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(buildCurrentProjectPayload()),
+        });
+      } catch (error) {
+        console.warn("Could not sync project upstream, saved locally:", error);
+      }
+    }
+
+    useEditorStore.getState().setHasUnsavedChanges(false);
+  }, [buildCurrentProjectFiles, buildCurrentProjectPayload, codingMode, currentBoard, environment, generator, language, projectId, projectNameState, setProjectId, token]);
 
   const saveAsProject = useCallback(
-    async (name: string) => {
-      if (!token) {
-        throw new Error("Your session ended. Sign in again to save this project.");
-      }
-
+    async (name: string, location?: string) => {
       const trimmedName = name.trim();
       if (!trimmedName) {
         throw new Error("Enter a project name before saving.");
       }
 
+      const currentFiles = buildCurrentProjectFiles();
+      const currentMeta = {
+        board: currentBoard,
+        mode: codingMode ?? "block",
+        language,
+        generator,
+        environment,
+      };
+
+      if (location) {
+        try {
+          await saveProjectFilesToDisk(location, trimmedName, currentFiles);
+        } catch (diskErr) {
+          console.warn("Could not write project files to disk:", diskErr);
+        }
+      }
+
       const projectPayload = buildProjectPayload({
         projectName: trimmedName,
-        files: buildCurrentProjectFiles(),
-        meta: {
-          board: currentBoard,
-          mode: codingMode ?? "block",
-          language,
-          generator,
-          environment,
-        },
+        files: currentFiles,
+        meta: currentMeta,
       });
 
-      const createRes = await apiFetch("/api/projects", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(projectPayload),
+      let newId: string | null = null;
+
+      // Try upstream API only if token is valid and not 'local'
+      if (token && token !== "local") {
+        try {
+          const createRes = await apiFetch("/api/projects", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(projectPayload),
+          });
+
+          if (createRes.ok) {
+            const data = await safeJson<{ id?: string }>(createRes);
+            if (data?.id) {
+              newId = data.id;
+              await apiFetch(`/api/projects/${newId}`, {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(projectPayload),
+              }).catch(() => {});
+            }
+          }
+        } catch (apiError) {
+          console.warn("API project creation unavailable, using local project storage:", apiError);
+        }
+      }
+
+      // Always save locally to ensure offline / desktop reliability
+      const savedProject = saveLocalProject({
+        id: newId,
+        name: trimmedName,
+        location: location || null,
+        files: currentFiles,
+        meta: currentMeta,
       });
+      newId = savedProject.id;
 
-      if (!createRes.ok) {
-        const data = await safeJson<{ error?: string }>(createRes);
-        throw new Error(data?.error || "Failed to create project.");
-      }
-
-      const newProject = await safeJson<{ id?: string }>(createRes);
-      const newId = newProject?.id;
-      if (!newId) {
-        throw new Error("Invalid response from the API.");
-      }
-
-      const putRes = await apiFetch(`/api/projects/${newId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(projectPayload),
-      });
-
-      if (!putRes.ok) {
-        const data = await safeJson<{ error?: string }>(putRes);
-        throw new Error(data?.error || "Failed to upload files to the new project.");
-      }
-
+      lastLoadedProjectIdRef.current = newId;
       setProjectId(newId);
       setProjectNameState(trimmedName);
       useEditorStore.getState().setHasUnsavedChanges(false);

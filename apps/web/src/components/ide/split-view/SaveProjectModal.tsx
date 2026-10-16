@@ -1,13 +1,17 @@
-﻿import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
+import { FolderOpen } from 'lucide-react';
 
 interface SaveProjectModalProps {
   open: boolean;
   isSaving: boolean;
   newProjectName: string;
+  saveLocation?: string;
   currentBoard: string;
   runtimeLabel: string;
   onNameChange: (value: string) => void;
+  onLocationChange?: (value: string) => void;
+  onBrowseLocation?: () => void;
   onClose: () => void;
   onSubmit: () => void;
 }
@@ -16,9 +20,12 @@ export default function SaveProjectModal({
   open,
   isSaving,
   newProjectName,
+  saveLocation,
   currentBoard,
   runtimeLabel,
   onNameChange,
+  onLocationChange,
+  onBrowseLocation,
   onClose,
   onSubmit,
 }: SaveProjectModalProps) {
@@ -69,6 +76,32 @@ export default function SaveProjectModal({
               autoFocus
               className="mb-3 w-full rounded-[14px] border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-surface-quiet)] px-4 py-3 text-sm font-medium text-[var(--ui-color-text)] outline-none transition-all focus:border-[color:var(--ui-color-primary)] focus:ring-2 focus:ring-[color:var(--ui-color-primary)]/20"
             />
+
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ui-color-text-muted)]">
+              Save location
+            </label>
+            <div className="mb-4 flex items-center gap-2">
+              <input
+                type="text"
+                value={saveLocation ?? ''}
+                onChange={(event) => onLocationChange?.(event.target.value)}
+                placeholder="Choose folder on disk..."
+                className="min-w-0 flex-1 rounded-[14px] border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-surface-quiet)] px-4 py-2.5 text-xs font-medium text-[var(--ui-color-text)] outline-none transition-all focus:border-[color:var(--ui-color-primary)] focus:ring-2 focus:ring-[color:var(--ui-color-primary)]/20"
+              />
+              {onBrowseLocation ? (
+                <button
+                  type="button"
+                  onClick={onBrowseLocation}
+                  disabled={isSaving}
+                  className="inline-flex h-10 items-center gap-1.5 rounded-[14px] border border-[color:var(--ui-border-soft)] bg-[color:var(--ui-surface-quiet)] px-3 text-xs font-semibold text-[var(--ui-color-text)] transition-colors hover:bg-[color:var(--ui-border-soft)]"
+                  title="Browse folder"
+                >
+                  <FolderOpen size={14} />
+                  <span>Browse</span>
+                </button>
+              ) : null}
+            </div>
+
             <p className="mb-6 text-xs leading-5 text-[var(--ui-color-text-muted)]">
               Tip: press Ctrl/Cmd+S any time in the editor to save or update this project.
             </p>

@@ -78,7 +78,10 @@ export default function BlockTerminalShell({
     <section className="flex h-full min-h-0 flex-col overflow-hidden bg-black font-mono text-gray-300">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-800 px-4 py-1 text-xs">
         <div className="min-w-0">
-          <p className="font-bold uppercase tracking-wider text-gray-400">CMD</p>
+          <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-gray-300">
+            <TerminalSquare size={13} className="text-emerald-400" />
+            <span>TERMINAL &amp; SERIAL MONITOR</span>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <span
@@ -128,8 +131,8 @@ export default function BlockTerminalShell({
           <ConsolePanel
             webSerial={webSerial}
             messages={serialMessages}
-            emptyTitle="No serial activity yet"
-            emptyBody="Connect a board or wait for serial output to start filling this monitor."
+            emptyTitle="Serial Monitor ready"
+            emptyBody="Connect a board to start sending and receiving serial data."
           />
         ) : null}
 
@@ -156,9 +159,10 @@ export default function BlockTerminalShell({
                   );
                 })
               ) : (
-                <div className="text-gray-600 text-xs">
-                  <p>C:\Users\User\Project&gt; No build activity yet</p>
-                  <p>Run Verify or Upload to start filling this stream.</p>
+                <div className="flex h-full min-h-[100px] flex-col items-center justify-center text-center text-gray-500 text-xs">
+                  <Zap size={22} className="mb-2 text-gray-700" />
+                  <p className="font-semibold uppercase tracking-wider text-gray-400">No build activity yet</p>
+                  <p className="mt-1 text-gray-600">Run Verify or Upload to view compilation output and toolchain logs.</p>
                 </div>
               )}
             </div>
